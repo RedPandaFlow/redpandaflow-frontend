@@ -1,31 +1,12 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# Dependency directories
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Build output
 dist/
 dist-ssr/
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+build/
 
 # Environment variables
 .env
@@ -34,5 +15,29 @@ dist-ssr/
 .env.test.local
 .env.production.local
 
-# Vite specific
-*.timestamp-*
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor & OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Vite
+*.local
+vite.config.js.timestamp-*
+
+# Cache
+.cache/
+.eslintcache
