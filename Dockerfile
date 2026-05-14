@@ -1,7 +1,7 @@
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 COPY redpandaflow-frontend/package*.json ./
-RUN npm ci
+RUN npm install
 COPY redpandaflow-frontend/ .
 RUN npm run build
 
