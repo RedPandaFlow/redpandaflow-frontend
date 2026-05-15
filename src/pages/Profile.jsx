@@ -1,20 +1,11 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { logout } from "../services/authService";
-import { Button } from "@/components/ui/button";
+import Navbar from "../components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const Profile = () => {
-  const { user, setUser } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    setUser(null);
-    navigate("/login");
-  };
+  const { user } = useContext(AuthContext);
 
   if (!user) {
     return (
@@ -30,21 +21,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-[#FDFAF6]">
-      <nav className="sticky top-0 z-10 flex justify-between items-center px-6 md:px-12 py-4 bg-[#FDFAF6]/80 backdrop-blur border-b border-[#EDE0D4]">
-        <span
-          className="text-xl font-semibold text-[#EA580C]"
-          style={{ fontFamily: "Georgia, serif" }}
-        >
-          RedPandaFlow
-        </span>
-        <Button
-          variant="ghost"
-          onClick={handleLogout}
-          className="text-xs font-semibold uppercase tracking-widest text-[#9C8170] hover:text-[#EA580C] hover:bg-orange-50"
-        >
-          Déconnexion
-        </Button>
-      </nav>
+      <Navbar />
 
       <main className="max-w-2xl mx-auto py-12 px-4 md:px-0">
         <div className="mb-8">
