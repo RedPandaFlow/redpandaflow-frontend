@@ -13,11 +13,13 @@ import {
   updateMemberRole,
   removeMember,
 } from "../services/workspaceService";
+import { getBoards } from "../services/boardService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog } from "@/components/ui/dialog";
 import { UserAvatar } from "../components/UserAvatar";
+import CreateBoardDialog from "../components/CreateBoardDialog";
 
 const ROLES = ["Admin", "Member", "Viewer"];
 const roleLabels = { Admin: "Administrateur", Member: "Membre", Viewer: "Lecteur" };
@@ -43,11 +45,16 @@ const WorkspaceDetail = () => {
   const [inviteRole, setInviteRole] = useState("Member");
   const [memberFilter, setMemberFilter] = useState("");
   const [busy, setBusy] = useState(false);
+  const [createBoardOpen, setCreateBoardOpen] = useState(false);
 
   const load = async () => {
     try {
-      const [ws, mbrs] = await Promise.all([getWorkspace(id), getMembers(id)]);
-      setWorkspace(ws);
+      const [ws, mbrs, brds] = await Promise.all([
+        getWorkspace(id),
+        getMembers(id),
+        getBoards(id),
+      ]);
+      setWorkspace({ ...ws, boards: brds });
       setMembers(mbrs);
       setName(ws.name);
       setDescription(ws.description || "");
@@ -216,26 +223,24 @@ const WorkspaceDetail = () => {
               <button
                 key={board.id}
                 type="button"
+                onClick={() => navigate(`/workspace/${id}/board/${board.id}`)}
                 className="overflow-hidden rounded-lg border border-[#EDE0D4] bg-white text-left transition-colors hover:border-orange-200"
               >
-                <div className={`h-20 bg-linear-to-br ${gradientFor(board.name)}`} />
+                <div className={`h-20 bg-linear-to-br ${gradientFor(board.title)}`} />
                 <div className="px-3 py-2.5">
                   <span className="block truncate text-sm font-semibold text-[#1C1410]">
-                    {board.name}
+                    {board.title}
                   </span>
                 </div>
               </button>
             ))}
             <button
               type="button"
-              disabled
-              className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] opacity-70"
+              onClick={() => setCreateBoardOpen(true)}
+              className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] transition-colors hover:border-orange-200 hover:text-[#EA580C]"
             >
               <Plus size={20} />
               <span className="text-sm font-semibold">Créer un tableau</span>
-              <span className="text-[10px] uppercase tracking-wide">
-                Bientôt disponible
-              </span>
             </button>
           </div>
           {boards.length === 0 && (
@@ -438,6 +443,12 @@ const WorkspaceDetail = () => {
           )}
         </section>
       )}
+
+      <CreateBoardDialog
+        open={createBoardOpen}
+        onClose={() => setCreateBoardOpen(false)}
+        workspaceId={id}
+      />
 
       <Dialog
         open={inviteOpen}

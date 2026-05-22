@@ -5,11 +5,13 @@ import { userWorkspacePath } from "../lib/routes";
 import CreateMenu from "./CreateMenu";
 import UserMenu from "./UserMenu";
 import CreateWorkspaceDialog from "./CreateWorkspaceDialog";
+import CreateBoardDialog from "./CreateBoardDialog";
 import logo from "../assets/redpandaflow-logo.png";
 
 const Navbar = () => {
   const { user } = useContext(AuthContext);
   const [workspaceDialogOpen, setWorkspaceDialogOpen] = useState(false);
+  const [boardDialogOpen, setBoardDialogOpen] = useState(false);
 
   return (
     <>
@@ -23,7 +25,10 @@ const Navbar = () => {
           RedPandaFlow
         </Link>
         <div className="flex items-center gap-3">
-          <CreateMenu onCreateWorkspace={() => setWorkspaceDialogOpen(true)} />
+          <CreateMenu
+            onCreateWorkspace={() => setWorkspaceDialogOpen(true)}
+            onCreateBoard={() => setBoardDialogOpen(true)}
+          />
           <UserMenu />
         </div>
       </nav>
@@ -31,6 +36,11 @@ const Navbar = () => {
       <CreateWorkspaceDialog
         open={workspaceDialogOpen}
         onClose={() => setWorkspaceDialogOpen(false)}
+      />
+
+      <CreateBoardDialog
+        open={boardDialogOpen}
+        onClose={() => setBoardDialogOpen(false)}
       />
     </>
   );

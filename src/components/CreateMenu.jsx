@@ -5,7 +5,7 @@ import {
   DropdownMenu,
 } from "./ui/dropdown-menu";
 
-const CreateMenu = ({ onCreateWorkspace }) => {
+const CreateMenu = ({ onCreateWorkspace, onCreateBoard }) => {
   return (
     <DropdownMenu
       align="end"
@@ -21,7 +21,7 @@ const CreateMenu = ({ onCreateWorkspace }) => {
       <DropdownItem icon={UsersThree} onClick={onCreateWorkspace}>
         Espace de travail
       </DropdownItem>
-      <DropdownItem icon={Kanban} disabled hint="Bientôt">
+      <DropdownItem icon={Kanban} onClick={onCreateBoard}>
         Tableau
       </DropdownItem>
     </DropdownMenu>
