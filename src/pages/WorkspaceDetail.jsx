@@ -1,6 +1,6 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Plus, SignOut, UserPlus } from "@phosphor-icons/react";
+import { ArrowLeft, CaretDown, SignOut, UserPlus } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { userWorkspacePath } from "../lib/routes";
 import { gradientFor } from "../lib/gradient";
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownItem } from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "../components/UserAvatar";
 import CreateBoardDialog from "../components/CreateBoardDialog";
 
@@ -38,6 +39,7 @@ const WorkspaceDetail = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(searchParams.get("tab") || "boards");
+  const [collaboratorTab, setCollaboratorTab] = useState("members");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -49,11 +51,11 @@ const WorkspaceDetail = () => {
 
   const load = async () => {
     try {
-      const [ws, mbrs, brds] = await Promise.all([
+      const [ws, brds] = await Promise.all([
         getWorkspace(id),
-        getMembers(id),
         getBoards(id),
       ]);
+      const mbrs = ws.currentUserRole != null ? await getMembers(id) : [];
       setWorkspace({ ...ws, boards: brds });
       setMembers(mbrs);
       setName(ws.name);
@@ -73,6 +75,12 @@ const WorkspaceDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const workspaceBoards = workspace?.boards;
+  const boardsById = useMemo(() => {
+    if (!workspaceBoards) return {};
+    return Object.fromEntries(workspaceBoards.map((b) => [b.id, b]));
+  }, [workspaceBoards]);
+
   if (loading) {
     return (
       <p className="max-w-4xl mx-auto py-12 px-4 text-[#9C8170] text-sm">
@@ -81,10 +89,19 @@ const WorkspaceDetail = () => {
     );
   }
 
+  const isGuest = workspace.currentUserRole == null;
   const isAdmin = workspace.currentUserRole === "Admin";
   const isOwner = workspace.ownerId === currentUserId;
   const boards = workspace.boards ?? [];
   const initial = (workspace.name || "?").charAt(0).toUpperCase();
+
+  const workspaceMembers = members.filter((m) => m.role != null);
+  const singleBoardGuests = members.filter(
+    (m) => m.role == null && (m.boardIds?.length ?? 0) === 1
+  );
+  const multiBoardGuests = members.filter(
+    (m) => m.role == null && (m.boardIds?.length ?? 0) >= 2
+  );
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -94,7 +111,7 @@ const WorkspaceDetail = () => {
         name: name.trim(),
         description: description.trim() || null,
       });
-      setWorkspace(updated);
+      setWorkspace((prev) => ({ ...prev, ...updated, boards: prev.boards }));
     } catch (error) {
       alert(error.response?.data?.message || "Mise à jour impossible.");
     } finally {
@@ -153,15 +170,39 @@ const WorkspaceDetail = () => {
     }
   };
 
-  const tabs = [
-    { id: "boards", label: "Tableaux" },
-    { id: "members", label: `Membres (${members.length})` },
-    { id: "settings", label: "Paramètres" },
+  const tabs = isGuest
+    ? [{ id: "boards", label: "Tableaux" }]
+    : [
+        { id: "boards", label: "Tableaux" },
+        { id: "members", label: "Collaborateurs" },
+        { id: "settings", label: "Paramètres" },
+      ];
+
+  const collaboratorTabs = [
+    { id: "members", label: "Membres", count: workspaceMembers.length },
+    {
+      id: "single",
+      label: "Invités d'un seul tableau",
+      count: singleBoardGuests.length,
+    },
+    {
+      id: "multi",
+      label: "Invités de plusieurs tableaux",
+      count: multiBoardGuests.length,
+    },
   ];
 
-  const filteredMembers = members.filter((m) =>
-    m.username.toLowerCase().includes(memberFilter.trim().toLowerCase())
-  );
+  const visibleMembers = (() => {
+    let list = members;
+    if (collaboratorTab === "members") list = workspaceMembers;
+    else if (collaboratorTab === "single") list = singleBoardGuests;
+    else if (collaboratorTab === "multi") list = multiBoardGuests;
+    if (memberFilter.trim()) {
+      const needle = memberFilter.trim().toLowerCase();
+      list = list.filter((m) => m.username.toLowerCase().includes(needle));
+    }
+    return list;
+  })();
 
   return (
     <main className="max-w-4xl mx-auto py-10 px-4 md:px-6">
@@ -187,8 +228,13 @@ const WorkspaceDetail = () => {
             {workspace.name}
           </h1>
           <p className="truncate text-sm text-[#9C8170]">
-            {workspace.description || "Pas de description"} · Votre rôle :{" "}
-            {roleLabels[workspace.currentUserRole]}
+            {workspace.description || "Pas de description"}
+            {!isGuest && (
+              <>
+                {" "}· Votre rôle : {roleLabels[workspace.currentUserRole]}
+              </>
+            )}
+            {isGuest && " · Invité au tableau"}
           </p>
         </div>
       </div>
@@ -215,7 +261,9 @@ const WorkspaceDetail = () => {
           <div>
             <h2 className="text-xl font-bold text-[#1C1410]">Tableaux</h2>
             <p className="mt-1 text-sm text-[#9C8170]">
-              Les tableaux de cet espace de travail.
+              {isGuest
+                ? "Les tableaux auxquels vous avez accès dans cet espace."
+                : "Les tableaux de cet espace de travail."}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -234,14 +282,16 @@ const WorkspaceDetail = () => {
                 </div>
               </button>
             ))}
-            <button
-              type="button"
-              onClick={() => setCreateBoardOpen(true)}
-              className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] transition-colors hover:border-orange-200 hover:text-[#EA580C]"
-            >
-              <Plus size={20} />
-              <span className="text-sm font-semibold">Créer un tableau</span>
-            </button>
+            {!isGuest && (
+              <button
+                type="button"
+                onClick={() => setCreateBoardOpen(true)}
+                className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] transition-colors hover:border-orange-200 hover:text-[#EA580C]"
+              >
+                <UserPlus size={20} />
+                <span className="text-sm font-semibold">Créer un tableau</span>
+              </button>
+            )}
           </div>
           {boards.length === 0 && (
             <p className="text-xs text-[#9C8170]">
@@ -251,30 +301,49 @@ const WorkspaceDetail = () => {
         </section>
       )}
 
-      {tab === "members" && (
+      {tab === "members" && !isGuest && (
         <section className="space-y-5">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-[#1C1410]">Membres</h2>
+            <h2 className="text-xl font-bold text-[#1C1410]">Collaborateurs</h2>
             <span className="rounded-full border border-[#EDE0D4] bg-[#FFF8F2] px-2 py-0.5 text-xs font-bold text-[#7A6558]">
               {members.length}
             </span>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <p className="max-w-xl text-sm text-[#9C8170]">
-              Les membres de l'espace de travail peuvent consulter et rejoindre
-              tous les tableaux, et en créer de nouveaux.
-            </p>
-            {isAdmin && (
-              <Button
-                onClick={() => setInviteOpen(true)}
-                className="shrink-0 bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
+          <div className="flex flex-wrap gap-4 border-b border-[#EDE0D4]">
+            {collaboratorTabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setCollaboratorTab(t.id)}
+                className={`-mb-px border-b-2 pb-2 text-sm font-semibold transition-colors ${
+                  collaboratorTab === t.id
+                    ? "border-[#EA580C] text-[#EA580C]"
+                    : "border-transparent text-[#9C8170] hover:text-[#1C1410]"
+                }`}
               >
-                <UserPlus size={16} />
-                Inviter un membre
-              </Button>
-            )}
+                {t.label} ({t.count})
+              </button>
+            ))}
           </div>
+
+          {collaboratorTab === "members" && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <p className="max-w-xl text-sm text-[#9C8170]">
+                Les membres de l'espace de travail peuvent consulter et rejoindre
+                tous les tableaux, et en créer de nouveaux.
+              </p>
+              {isAdmin && (
+                <Button
+                  onClick={() => setInviteOpen(true)}
+                  className="shrink-0 bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
+                >
+                  <UserPlus size={16} />
+                  Inviter un membre
+                </Button>
+              )}
+            </div>
+          )}
 
           <Input
             value={memberFilter}
@@ -284,16 +353,19 @@ const WorkspaceDetail = () => {
           />
 
           <div className="rounded-xl border border-[#EDE0D4] bg-white">
-            {filteredMembers.length === 0 ? (
-              <p className="p-4 text-sm text-[#9C8170]">Aucun membre trouvé.</p>
+            {visibleMembers.length === 0 ? (
+              <p className="p-4 text-sm text-[#9C8170]">
+                Aucun collaborateur dans cette catégorie.
+              </p>
             ) : (
-              filteredMembers.map((m) => {
+              visibleMembers.map((m) => {
                 const isSelf = m.userId === currentUserId;
-                const canRemove = !m.isOwner && (isAdmin || isSelf);
+                const canRemove = m.role != null && !m.isOwner && (isAdmin || isSelf);
+                const boardIds = m.boardIds ?? [];
                 return (
                   <div
                     key={m.userId}
-                    className="flex items-center justify-between gap-3 border-b border-[#EDE0D4] px-4 py-3 last:border-0"
+                    className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDE0D4] px-4 py-3 last:border-0"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <UserAvatar name={m.username} size={36} />
@@ -301,28 +373,53 @@ const WorkspaceDetail = () => {
                         <p className="truncate font-semibold text-[#1C1410]">
                           {m.username}
                           {isSelf && (
-                            <span className="font-normal text-[#9C8170]">
-                              {" "}
-                              (vous)
-                            </span>
+                            <span className="font-normal text-[#9C8170]"> (vous)</span>
                           )}
                         </p>
                         <p className="truncate text-sm text-[#9C8170]">
-                          {m.email}
+                          @{m.username} · {m.email}
                         </p>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
+                      {boardIds.length > 0 && (
+                        <DropdownMenu
+                          trigger={
+                            <span className="flex items-center gap-1.5 rounded-md border border-[#EDE0D4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
+                              Tableaux ({boardIds.length})
+                              <CaretDown size={12} />
+                            </span>
+                          }
+                        >
+                          {boardIds.map((bid) => {
+                            const b = boardsById[bid];
+                            const title = b?.title ?? "Tableau";
+                            return (
+                              <DropdownItem
+                                key={bid}
+                                onClick={() =>
+                                  navigate(`/workspace/${id}/board/${bid}`)
+                                }
+                              >
+                                {title}
+                              </DropdownItem>
+                            );
+                          })}
+                        </DropdownMenu>
+                      )}
+
                       {m.isOwner ? (
                         <span className="rounded-md border border-orange-100 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-[#EA580C]">
                           Propriétaire
                         </span>
+                      ) : m.role == null ? (
+                        <span className="rounded-md border border-[#EDE0D4] px-2.5 py-1 text-xs font-semibold text-[#7A6558]">
+                          Invité
+                        </span>
                       ) : isAdmin ? (
                         <select
                           value={m.role}
-                          onChange={(e) =>
-                            handleRoleChange(m.userId, e.target.value)
-                          }
+                          onChange={(e) => handleRoleChange(m.userId, e.target.value)}
                           className={selectClass}
                         >
                           {ROLES.map((r) => (
@@ -336,6 +433,7 @@ const WorkspaceDetail = () => {
                           {roleLabels[m.role]}
                         </span>
                       )}
+
                       {canRemove && (
                         <Button
                           variant="ghost"
@@ -355,7 +453,7 @@ const WorkspaceDetail = () => {
         </section>
       )}
 
-      {tab === "settings" && (
+      {tab === "settings" && !isGuest && (
         <section className="space-y-5">
           <div>
             <h2 className="text-xl font-bold text-[#1C1410]">Paramètres</h2>

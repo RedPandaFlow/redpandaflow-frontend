@@ -42,3 +42,23 @@ export const updateColumn = async (workspaceId, boardId, columnId, payload) => {
 export const deleteColumn = async (workspaceId, boardId, columnId) => {
     await api.delete(`/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}`);
 };
+
+export const getBoardMembers = async (workspaceId, boardId) => {
+    const { data } = await api.get(`/workspaces/${workspaceId}/boards/${boardId}/members`);
+    return data;
+};
+
+export const inviteBoardMember = async (workspaceId, boardId, payload) => {
+    const { data } = await api.post(`/workspaces/${workspaceId}/boards/${boardId}/members`, payload);
+    return data;
+};
+
+export const updateBoardMemberRole = async (workspaceId, boardId, userId, role) => {
+    const { data } = await api.put(`/workspaces/${workspaceId}/boards/${boardId}/members/${userId}`, { role });
+    return data;
+};
+
+export const removeBoardMember = async (workspaceId, boardId, userId) => {
+    await api.delete(`/workspaces/${workspaceId}/boards/${boardId}/members/${userId}`);
+};
+

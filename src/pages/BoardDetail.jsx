@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { DotsThree, Plus, PencilSimple, Trash, X } from "@phosphor-icons/react";
+import { DotsThree, Plus, PencilSimple, Trash, UserPlus, X } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { userWorkspacePath } from "../lib/routes";
 import { gradientFor } from "../lib/gradient";
@@ -17,6 +17,7 @@ import {
   DropdownItem,
   DropdownSeparator,
 } from "@/components/ui/dropdown-menu";
+import ShareBoardDialog from "../components/ShareBoardDialog";
 
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
@@ -30,6 +31,7 @@ const BoardDetail = () => {
   const [addingColumn, setAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const newColumnRef = useRef(null);
 
   useEffect(() => {
@@ -163,7 +165,14 @@ const BoardDetail = () => {
           </button>
         )}
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            onClick={() => setShareOpen(true)}
+            className="bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
+          >
+            <UserPlus size={16} />
+            Partager
+          </Button>
           <DropdownMenu
             trigger={
               <span className="flex size-9 items-center justify-center rounded-lg border border-[#EDE0D4] bg-white text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
@@ -184,6 +193,13 @@ const BoardDetail = () => {
           </DropdownMenu>
         </div>
       </header>
+
+      <ShareBoardDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        workspaceId={workspaceId}
+        boardId={boardId}
+      />
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden bg-[#FDFAF6]">
         <div className="flex h-full items-start gap-3 p-4 md:p-6">
