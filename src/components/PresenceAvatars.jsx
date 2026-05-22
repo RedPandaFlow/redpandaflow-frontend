@@ -59,12 +59,13 @@ const PresenceAvatars = ({ members, presence }) => {
     const memberList = (members ?? []).map((m) => ({
       userId: m.userId,
       username: m.username,
+      email: m.email,
       isOnline: presenceById.has(m.userId),
     }));
     const knownIds = new Set(memberList.map((m) => m.userId));
     for (const p of presence ?? []) {
       if (!knownIds.has(p.userId)) {
-        memberList.push({ userId: p.userId, username: p.username, isOnline: true });
+        memberList.push({ userId: p.userId, username: p.username, email: null, isOnline: true });
       }
     }
     memberList.sort((a, b) => {

@@ -28,6 +28,9 @@ const MemberPopover = ({ user, isSelf, onClose }) => {
           <div className="min-w-0 flex-1 pr-6">
             <p className="truncate font-bold text-white">{user.username}</p>
             <p className="truncate text-xs text-white/80">@{user.username}</p>
+            {user.email && (
+              <p className="truncate text-xs text-white/80">{user.email}</p>
+            )}
           </div>
         </div>
       </div>
