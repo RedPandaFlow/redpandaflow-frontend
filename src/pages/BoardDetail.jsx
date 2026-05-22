@@ -1,6 +1,14 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Archive, DotsThree, Plus, PencilSimple, Trash, UserPlus, X } from "@phosphor-icons/react";
+import {
+  Archive,
+  DotsThree,
+  Plus,
+  PencilSimple,
+  Trash,
+  UserPlus,
+  X,
+} from "@phosphor-icons/react";
 import {
   DndContext,
   PointerSensor,
@@ -13,6 +21,7 @@ import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -41,6 +50,8 @@ import ShareBoardDialog from "../components/ShareBoardDialog";
 import ArchivedColumnsDialog from "../components/ArchivedColumnsDialog";
 import PresenceAvatars from "../components/PresenceAvatars";
 import { createHubConnection } from "../services/signalrClient";
+import CardItem from "../components/CardItem";
+import { createCard, updateCardOrder } from "../services/cardService";
 
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
@@ -62,7 +73,9 @@ const BoardDetail = () => {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   useEffect(() => {
@@ -100,7 +113,8 @@ const BoardDetail = () => {
 
     connection.on("PresenceUpdate", (payload) => {
       if (cancelled) return;
-      if (payload?.boardId && String(payload.boardId) !== String(boardId)) return;
+      if (payload?.boardId && String(payload.boardId) !== String(boardId))
+        return;
       setPresence(payload?.users ?? []);
     });
 
@@ -194,7 +208,9 @@ const BoardDetail = () => {
       setNewColumnTitle("");
       newColumnRef.current?.focus();
     } catch (error) {
-      alert(error.response?.data?.message || "Création de la colonne impossible.");
+      alert(
+        error.response?.data?.message || "Création de la colonne impossible.",
+      );
     } finally {
       setBusy(false);
     }
@@ -205,28 +221,117 @@ const BoardDetail = () => {
     setNewColumnTitle("");
   };
 
-  const handleColumnDragEnd = async (event) => {
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over) return;
 
-    const ordered = [...(board.columns ?? [])].sort((a, b) => a.order - b.order);
-    const oldIndex = ordered.findIndex((c) => c.id === active.id);
-    const newIndex = ordered.findIndex((c) => c.id === over.id);
-    if (oldIndex < 0 || newIndex < 0) return;
+    const activeType = active.data.current?.type;
+    const overType = over.data.current?.type;
 
-    const previous = board.columns;
-    const moved = arrayMove(ordered, oldIndex, newIndex).map((c, idx) => ({
-      ...c,
-      order: idx,
-    }));
+    // --- 1. DÉPLACEMENT DE COLONNE ---
+    if (activeType === "Column" && overType === "Column") {
+      if (active.id === over.id) return;
+      const ordered = [...(board.columns ?? [])].sort(
+        (a, b) => a.order - b.order,
+      );
+      const oldIndex = ordered.findIndex((c) => c.id === active.id);
+      const newIndex = ordered.findIndex((c) => c.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return;
 
-    setBoard((prev) => ({ ...prev, columns: moved }));
+      const previous = board.columns;
+      const moved = arrayMove(ordered, oldIndex, newIndex).map((c, idx) => ({
+        ...c,
+        order: idx,
+      }));
+      setBoard((prev) => ({ ...prev, columns: moved }));
 
-    try {
-      await updateColumnOrder(workspaceId, boardId, active.id, newIndex);
-    } catch (error) {
-      alert(error.response?.data?.message || "Réorganisation impossible.");
-      setBoard((prev) => ({ ...prev, columns: previous }));
+      try {
+        await updateColumnOrder(workspaceId, boardId, active.id, newIndex);
+      } catch (error) {
+        alert(error.response?.data?.message || "Réorganisation impossible.");
+        setBoard((prev) => ({ ...prev, columns: previous }));
+      }
+      return;
+    }
+
+    // --- 2. DÉPLACEMENT DE CARTE ---
+    if (activeType === "Card") {
+      const activeId = active.id;
+      const overId = over.id;
+
+      // Trouver la colonne d'origine
+      const sourceColumn = board.columns.find((c) =>
+        c.cards?.some((card) => card.id === activeId),
+      );
+
+      // Trouver la colonne de destination (soit on survole une colonne, soit une autre carte)
+      const destColumn =
+        overType === "Column"
+          ? board.columns.find((c) => c.id === overId)
+          : board.columns.find((c) =>
+              c.cards?.some((card) => card.id === overId),
+            );
+
+      if (!sourceColumn || !destColumn) return;
+
+      const sourceCards = [...(sourceColumn.cards || [])];
+      const destCards =
+        sourceColumn.id === destColumn.id
+          ? sourceCards
+          : [...(destColumn.cards || [])];
+
+      const activeIndex = sourceCards.findIndex((c) => c.id === activeId);
+      const overIndex =
+        overType === "Column"
+          ? destCards.length
+          : destCards.findIndex((c) => c.id === overId);
+
+      const previousColumns = board.columns; // Sauvegarde en cas d'erreur
+
+      // A. Mouvement dans la MÊME colonne
+      if (sourceColumn.id === destColumn.id) {
+        if (activeIndex === overIndex) return;
+        const movedCards = arrayMove(sourceCards, activeIndex, overIndex).map(
+          (c, idx) => ({ ...c, order: idx }),
+        );
+
+        setBoard((prev) => ({
+          ...prev,
+          columns: prev.columns.map((c) =>
+            c.id === sourceColumn.id ? { ...c, cards: movedCards } : c,
+          ),
+        }));
+      }
+      // B. Mouvement vers une AUTRE colonne
+      else {
+        const [movedCard] = sourceCards.splice(activeIndex, 1);
+        movedCard.columnId = destColumn.id;
+        destCards.splice(overIndex, 0, movedCard); // Insertion
+        const finalDestCards = destCards.map((c, idx) => ({
+          ...c,
+          order: idx,
+        })); // Recalcul de l'ordre
+
+        setBoard((prev) => ({
+          ...prev,
+          columns: prev.columns.map((c) => {
+            if (c.id === sourceColumn.id) return { ...c, cards: sourceCards };
+            if (c.id === destColumn.id) return { ...c, cards: finalDestCards };
+            return c;
+          }),
+        }));
+      }
+
+      // Appel à ton API C#
+      try {
+        await updateCardOrder(workspaceId, boardId, sourceColumn.id, activeId, {
+          newColumnId: destColumn.id,
+          newOrder: overIndex >= 0 ? overIndex : 0,
+        });
+      } catch (error) {
+        alert("Erreur lors du déplacement de la carte.");
+        setBoard((prev) => ({ ...prev, columns: previousColumns })); // Annulation visuelle
+      }
     }
   };
 
@@ -275,7 +380,7 @@ const BoardDetail = () => {
       <header className="flex items-center gap-3 border-b border-[#EDE0D4] bg-white px-4 py-3 md:px-6">
         <div
           className={`flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br text-sm font-bold text-white ${gradientFor(
-            board.title
+            board.title,
           )}`}
         >
           {(board.title || "?").charAt(0).toUpperCase()}
@@ -361,7 +466,7 @@ const BoardDetail = () => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={handleColumnDragEnd}
+            onDragEnd={handleDragEnd}
           >
             <SortableContext
               items={columns.map((c) => c.id)}
@@ -371,8 +476,21 @@ const BoardDetail = () => {
                 <BoardColumn
                   key={column.id}
                   column={column}
+                  workspaceId={workspaceId}
+                  boardId={boardId}
                   onArchive={() => handleArchiveColumn(column.id)}
                   onDelete={() => handleDeleteColumn(column.id)}
+                  onCardCreated={(columnId, newCard) => {
+                    // Met à jour l'écran avec la nouvelle carte
+                    setBoard((prev) => ({
+                      ...prev,
+                      columns: prev.columns.map((c) =>
+                        c.id === columnId
+                          ? { ...c, cards: [...(c.cards || []), newCard] }
+                          : c,
+                      ),
+                    }));
+                  }}
                 />
               ))}
             </SortableContext>
@@ -420,7 +538,9 @@ const BoardDetail = () => {
               className="flex w-72 shrink-0 items-center gap-2 rounded-xl border border-dashed border-[#EDE0D4] bg-white/60 px-3 py-2.5 text-sm font-semibold text-[#7A6558] transition-colors hover:bg-white hover:text-[#EA580C]"
             >
               <Plus size={16} />
-              {columns.length === 0 ? "Ajouter une liste" : "Ajouter une autre liste"}
+              {columns.length === 0
+                ? "Ajouter une liste"
+                : "Ajouter une autre liste"}
             </button>
           )}
         </div>
@@ -428,8 +548,19 @@ const BoardDetail = () => {
     </main>
   );
 };
+const BoardColumn = ({
+  column,
+  workspaceId,
+  boardId,
+  onArchive,
+  onDelete,
+  onCardCreated,
+}) => {
+  const [addingCard, setAddingCard] = useState(false);
+  const [newCardTitle, setNewCardTitle] = useState("");
+  const [busy, setBusy] = useState(false);
+  const newCardRef = useRef(null);
 
-const BoardColumn = ({ column, onArchive, onDelete }) => {
   const {
     attributes,
     listeners,
@@ -437,7 +568,10 @@ const BoardColumn = ({ column, onArchive, onDelete }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: column.id });
+  } = useSortable({
+    id: column.id,
+    data: { type: "Column", column },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -445,52 +579,115 @@ const BoardColumn = ({ column, onArchive, onDelete }) => {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  useEffect(() => {
+    if (addingCard) newCardRef.current?.focus();
+  }, [addingCard]);
+
+  // Les cartes triées par leur ordre
+  const cards = [...(column.cards ?? [])].sort((a, b) => a.order - b.order);
+
+  const handleAddCard = async (e) => {
+    e.preventDefault();
+    if (!newCardTitle.trim()) return;
+    setBusy(true);
+    try {
+      const createdCard = await createCard(workspaceId, boardId, column.id, {
+        title: newCardTitle.trim(),
+      });
+      setNewCardTitle("");
+      setAddingCard(false);
+      onCardCreated(column.id, createdCard); // Dit au parent de mettre à jour l'écran
+    } catch (error) {
+      alert(error.response?.data?.message || "Impossible de créer la carte.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <section
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="flex w-72 shrink-0 cursor-grab flex-col rounded-xl border border-[#EDE0D4] bg-white shadow-sm active:cursor-grabbing"
+      className="flex w-72 shrink-0 flex-col rounded-xl border border-[#EDE0D4] bg-[#FDFAF6] shadow-sm"
     >
-      <header className="flex items-center gap-2 px-3 py-2.5">
+      {/* En-tête de la colonne (Sert de poignée pour glisser la colonne) */}
+      <header
+        {...attributes}
+        {...listeners}
+        className="flex items-center gap-2 px-3 py-2.5 cursor-grab active:cursor-grabbing"
+      >
         <h3 className="flex-1 truncate text-sm font-bold text-[#1C1410]">
           {column.title}
         </h3>
-        <span className="rounded-full border border-[#EDE0D4] bg-[#FFF8F2] px-2 py-0.5 text-[11px] font-bold text-[#7A6558]">
-          0
+        <span className="rounded-full border border-[#EDE0D4] bg-white px-2 py-0.5 text-[11px] font-bold text-[#7A6558]">
+          {cards.length}
         </span>
-        <div onPointerDown={(e) => e.stopPropagation()}>
-          <DropdownMenu
-            trigger={
-              <span className="flex size-7 items-center justify-center rounded-md text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
-                <DotsThree size={18} weight="bold" />
-              </span>
-            }
-          >
-            <DropdownItem icon={Archive} onClick={onArchive}>
-              Archiver la liste
-            </DropdownItem>
-            <DropdownSeparator />
-            <DropdownItem icon={Trash} destructive onClick={onDelete}>
-              Supprimer la liste
-            </DropdownItem>
-          </DropdownMenu>
-        </div>
+        {/* Ton dropdown existant ici... */}
       </header>
 
+      {/* Zone des cartes */}
       <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
-        {/* Cards: à implémenter plus tard */}
+        <SortableContext
+          items={cards.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {cards.map((card) => (
+            <CardItem
+              key={card.id}
+              card={card}
+              onClick={(c) => console.log("Ouvrir carte", c)}
+            />
+          ))}
+        </SortableContext>
       </div>
 
-      <button
-        type="button"
-        disabled
-        className="m-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-[#9C8170] opacity-70"
-      >
-        <Plus size={14} />
-        Ajouter une carte
-      </button>
+      {/* Formulaire d'ajout de carte */}
+      <div className="p-2">
+        {addingCard ? (
+          <form onSubmit={handleAddCard} className="flex flex-col gap-2">
+            <textarea
+              ref={newCardRef}
+              value={newCardTitle}
+              onChange={(e) => setNewCardTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAddCard(e);
+                }
+                if (e.key === "Escape") setAddingCard(false);
+              }}
+              disabled={busy}
+              placeholder="Titre de la carte..."
+              className="min-h-[60px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm text-[#1C1410] shadow-sm focus:border-[#EA580C] focus:outline-none focus:ring-1 focus:ring-[#EA580C]"
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                type="submit"
+                disabled={busy || !newCardTitle.trim()}
+                className="h-7 bg-[#EA580C] text-xs hover:bg-[#C2410C]"
+              >
+                {busy ? "..." : "Ajouter"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setAddingCard(false)}
+                className="rounded p-1 text-[#9C8170] hover:bg-orange-50 hover:text-[#1C1410]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAddingCard(true)}
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
+          >
+            <Plus size={16} />
+            Ajouter une carte
+          </button>
+        )}
+      </div>
     </section>
   );
 };
