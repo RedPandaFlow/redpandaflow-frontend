@@ -9,6 +9,7 @@ import {
   updateBoard,
   deleteBoard,
   createColumn,
+  getBoardMembers,
 } from "../services/boardService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ import {
   DropdownSeparator,
 } from "@/components/ui/dropdown-menu";
 import ShareBoardDialog from "../components/ShareBoardDialog";
+import PresenceAvatars from "../components/PresenceAvatars";
+import { createHubConnection } from "../services/signalrClient";
 
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
@@ -32,16 +35,22 @@ const BoardDetail = () => {
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [presence, setPresence] = useState([]);
+  const [members, setMembers] = useState([]);
   const newColumnRef = useRef(null);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const data = await getBoard(workspaceId, boardId);
+        const [data, mbrs] = await Promise.all([
+          getBoard(workspaceId, boardId),
+          getBoardMembers(workspaceId, boardId).catch(() => []),
+        ]);
         if (active) {
           setBoard(data);
           setTitleDraft(data.title);
+          setMembers(mbrs);
         }
       } catch (error) {
         alert(error.response?.data?.message || "Tableau introuvable.");
@@ -58,6 +67,49 @@ const BoardDetail = () => {
   useEffect(() => {
     if (addingColumn) newColumnRef.current?.focus();
   }, [addingColumn]);
+
+  useEffect(() => {
+    const connection = createHubConnection("/hubs/board");
+    let cancelled = false;
+
+    connection.on("PresenceUpdate", (payload) => {
+      if (cancelled) return;
+      if (payload?.boardId && String(payload.boardId) !== String(boardId)) return;
+      setPresence(payload?.users ?? []);
+    });
+
+    (async () => {
+      try {
+        await connection.start();
+        if (cancelled) {
+          await connection.stop();
+          return;
+        }
+        await connection.invoke("JoinBoard", boardId);
+      } catch (err) {
+        if (!cancelled) console.error("Presence connection failed", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      setPresence([]);
+      (async () => {
+        try {
+          if (connection.state === "Connected") {
+            await connection.invoke("LeaveBoard", boardId);
+          }
+        } catch {
+          /* ignore */
+        }
+        try {
+          await connection.stop();
+        } catch {
+          /* ignore */
+        }
+      })();
+    };
+  }, [boardId]);
 
   if (loading) {
     return (
@@ -165,7 +217,8 @@ const BoardDetail = () => {
           </button>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          <PresenceAvatars members={members} presence={presence} />
           <Button
             onClick={() => setShareOpen(true)}
             className="bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
