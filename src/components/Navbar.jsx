@@ -1,43 +1,38 @@
-import { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useContext, useState } from "react";
+import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { logout } from "../services/authService";
-import { Button } from "@/components/ui/button";
-
-const linkClass =
-  "text-xs font-semibold uppercase tracking-widest text-[#9C8170] hover:text-[#EA580C] hover:bg-orange-50";
+import { userWorkspacePath } from "../lib/routes";
+import CreateMenu from "./CreateMenu";
+import UserMenu from "./UserMenu";
+import CreateWorkspaceDialog from "./CreateWorkspaceDialog";
+import logo from "../assets/redpandaflow-logo.png";
 
 const Navbar = () => {
-  const { setUser } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    setUser(null);
-    navigate("/login");
-  };
+  const { user } = useContext(AuthContext);
+  const [workspaceDialogOpen, setWorkspaceDialogOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-10 flex justify-between items-center px-6 md:px-12 py-4 bg-[#FDFAF6]/80 backdrop-blur border-b border-[#EDE0D4]">
-      <Link
-        to="/workspaces"
-        className="text-xl font-semibold text-[#EA580C]"
-        style={{ fontFamily: "Georgia, serif" }}
-      >
-        RedPandaFlow
-      </Link>
-      <div className="flex items-center gap-1">
-        <Button variant="ghost" onClick={() => navigate("/workspaces")} className={linkClass}>
-          Workspaces
-        </Button>
-        <Button variant="ghost" onClick={() => navigate("/profile")} className={linkClass}>
-          Profil
-        </Button>
-        <Button variant="ghost" onClick={handleLogout} className={linkClass}>
-          Déconnexion
-        </Button>
-      </div>
-    </nav>
+    <>
+      <nav className="sticky top-0 z-10 flex justify-between items-center px-6 md:px-12 py-4 bg-[#FDFAF6]/80 backdrop-blur border-b border-[#EDE0D4]">
+        <Link
+          to={userWorkspacePath(user)}
+          className="flex items-center gap-2 text-xl font-semibold text-[#EA580C]"
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          <img src={logo} alt="RedPandaFlow" className="h-8 w-8" />
+          RedPandaFlow
+        </Link>
+        <div className="flex items-center gap-3">
+          <CreateMenu onCreateWorkspace={() => setWorkspaceDialogOpen(true)} />
+          <UserMenu />
+        </div>
+      </nav>
+
+      <CreateWorkspaceDialog
+        open={workspaceDialogOpen}
+        onClose={() => setWorkspaceDialogOpen(false)}
+      />
+    </>
   );
 };
 

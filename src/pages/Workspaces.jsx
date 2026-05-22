@@ -1,26 +1,32 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import { getWorkspaces, createWorkspace } from "../services/workspaceService";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { useContext, useEffect, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { CaretRight, Gear, Kanban, Plus, UsersThree } from "@phosphor-icons/react";
+import { AuthContext } from "../context/AuthContext";
+import { userWorkspacePath } from "../lib/routes";
+import { getWorkspaces } from "../services/workspaceService";
+import { gradientFor } from "../lib/gradient";
 
-const roleLabels = {
-  Admin: "Admin",
-  Member: "Membre",
-  Viewer: "Lecteur",
-};
+const WorkspaceAction = ({ icon: Icon, label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex items-center gap-1.5 rounded-md border border-[#EDE0D4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#7A6558] transition-colors hover:bg-orange-50 hover:text-[#EA580C]"
+  >
+    <Icon size={14} />
+    {label}
+  </button>
+);
 
 const Workspaces = () => {
   const navigate = useNavigate();
+  const { username } = useParams();
+  const { user } = useContext(AuthContext);
   const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [openIds, setOpenIds] = useState(() => new Set());
+
+  const ownUsername = user?.user?.username;
+  const wrongUser = ownUsername && username !== ownUsername;
 
   useEffect(() => {
     let active = true;
@@ -39,129 +45,148 @@ const Workspaces = () => {
     };
   }, []);
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setCreating(true);
-    try {
-      const created = await createWorkspace({
-        name: name.trim(),
-        description: description.trim() || null,
-      });
-      setName("");
-      setDescription("");
-      navigate(`/workspaces/${created.id}`);
-    } catch (error) {
-      alert(error.response?.data?.message || "Création impossible.");
-    } finally {
-      setCreating(false);
-    }
+  const toggle = (id) => {
+    setOpenIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
+  if (wrongUser) {
+    return <Navigate to={userWorkspacePath(user)} replace />;
+  }
+
   return (
-    <div className="min-h-screen bg-[#FDFAF6]">
-      <Navbar />
+    <main className="max-w-5xl mx-auto py-12 px-4 md:px-6">
+      <div className="mb-8">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#9C8170]">
+          Vos espaces de travail
+        </p>
+      </div>
 
-      <main className="max-w-3xl mx-auto py-12 px-4 md:px-0">
-        <div className="mb-8">
-          <p className="text-sm font-semibold text-[#EA580C] mb-1">Vos espaces</p>
-          <h1
-            className="text-3xl font-bold text-[#1C1410]"
-            style={{ letterSpacing: "-0.02em" }}
-          >
-            Mes workspaces
-          </h1>
-        </div>
-
-        <Card className="border border-[#EDE0D4] shadow-sm bg-white mb-8">
-          <CardContent className="p-6">
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="name"
-                  className="text-xs font-semibold uppercase tracking-widest text-[#9C8170]"
-                >
-                  Nom du workspace
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={25}
-                  placeholder="Mon équipe"
-                  className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="description"
-                  className="text-xs font-semibold uppercase tracking-widest text-[#9C8170]"
-                >
-                  Description (optionnelle)
-                </Label>
-                <Input
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  maxLength={500}
-                  placeholder="À quoi sert cet espace ?"
-                  className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={creating}
-                className="font-semibold bg-[#EA580C] hover:bg-[#C2410C]"
-              >
-                {creating ? "Création…" : "Créer un workspace"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {loading ? (
-          <p className="text-[#9C8170] text-sm">Chargement…</p>
-        ) : workspaces.length === 0 ? (
-          <p className="text-[#9C8170] text-sm">
-            Aucun workspace pour le moment. Créez-en un ci-dessus.
-          </p>
-        ) : (
-          <div className="grid gap-3">
-            {workspaces.map((ws) => (
-              <button
+      {loading ? (
+        <p className="text-[#9C8170] text-sm">Chargement…</p>
+      ) : workspaces.length === 0 ? (
+        <p className="text-[#9C8170] text-sm">
+          Aucun workspace pour le moment. Utilisez le bouton « Créer » dans la
+          barre de navigation.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {workspaces.map((ws) => {
+            const isActive = openIds.has(ws.id);
+            const boards = ws.boards ?? [];
+            const initial = (ws.name || "?").charAt(0).toUpperCase();
+            const detailPath = `/workspace/${ws.id}`;
+            return (
+              <div
                 key={ws.id}
-                onClick={() => navigate(`/workspaces/${ws.id}`)}
-                className="text-left"
+                className={`overflow-hidden rounded-xl border bg-white transition-colors ${
+                  isActive ? "border-orange-200 shadow-sm" : "border-[#EDE0D4]"
+                }`}
               >
-                <Card className="border border-[#EDE0D4] shadow-sm bg-white hover:border-orange-200 transition-colors">
-                  <CardContent className="p-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 px-4 py-3 md:px-5">
+                  <button
+                    type="button"
+                    onClick={() => toggle(ws.id)}
+                    aria-expanded={isActive}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <CaretRight
+                      size={14}
+                      weight="bold"
+                      className={`shrink-0 transition-transform ${
+                        isActive ? "rotate-90 text-[#EA580C]" : "text-[#9C8170]"
+                      }`}
+                    />
+                    <div
+                      className={`flex size-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br text-base font-bold text-white ${gradientFor(
+                        ws.name
+                      )}`}
+                    >
+                      {initial}
+                    </div>
                     <div className="min-w-0">
-                      <h2 className="text-lg font-bold text-[#1C1410] truncate">
+                      <h2 className="truncate text-base font-bold text-[#1C1410]">
                         {ws.name}
                       </h2>
-                      <p className="text-sm text-[#9C8170] truncate">
+                      <p className="truncate text-sm text-[#9C8170]">
                         {ws.description || "Pas de description"}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge
-                        variant="outline"
-                        className="text-[#7A6558] border-[#EDE0D4]"
+                  </button>
+
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <WorkspaceAction
+                      icon={Kanban}
+                      label="Tableaux"
+                      onClick={() => toggle(ws.id)}
+                    />
+                    <WorkspaceAction
+                      icon={UsersThree}
+                      label="Membres"
+                      onClick={() => navigate(`${detailPath}?tab=members`)}
+                    />
+                    <WorkspaceAction
+                      icon={Gear}
+                      label="Paramètres"
+                      onClick={() => navigate(`${detailPath}?tab=settings`)}
+                    />
+                  </div>
+                </div>
+
+                {isActive && (
+                  <div className="border-t border-[#EDE0D4] bg-[#FDFAF6]/60 px-4 py-4 md:px-5">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                      {boards.map((board) => (
+                        <button
+                          key={board.id}
+                          type="button"
+                          className="overflow-hidden rounded-lg border border-[#EDE0D4] bg-white text-left transition-colors hover:border-orange-200"
+                        >
+                          <div
+                            className={`h-20 bg-linear-to-br ${gradientFor(
+                              board.name
+                            )}`}
+                          />
+                          <div className="px-3 py-2.5">
+                            <span className="block truncate text-sm font-semibold text-[#1C1410]">
+                              {board.name}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+
+                      <button
+                        type="button"
+                        disabled
+                        className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] opacity-70"
                       >
-                        {ws.memberCount} membre{ws.memberCount > 1 ? "s" : ""}
-                      </Badge>
-                      <Badge className="bg-orange-50 text-[#EA580C] border border-orange-100 hover:bg-orange-50">
-                        {roleLabels[ws.currentUserRole] ?? ws.currentUserRole}
-                      </Badge>
+                        <Plus size={20} />
+                        <span className="text-sm font-semibold">
+                          Créer un tableau
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide">
+                          Bientôt disponible
+                        </span>
+                      </button>
                     </div>
-                  </CardContent>
-                </Card>
-              </button>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+
+                    {boards.length === 0 && (
+                      <p className="mt-3 text-xs text-[#9C8170]">
+                        Les tableaux de cet espace apparaîtront ici.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </main>
   );
 };
 
