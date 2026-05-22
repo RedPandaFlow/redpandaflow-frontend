@@ -43,6 +43,35 @@ export const deleteColumn = async (workspaceId, boardId, columnId) => {
     await api.delete(`/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}`);
 };
 
+export const updateColumnOrder = async (workspaceId, boardId, columnId, newOrder) => {
+    const { data } = await api.patch(
+        `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/order`,
+        { columnId, newOrder }
+    );
+    return data;
+};
+
+export const archiveColumn = async (workspaceId, boardId, columnId) => {
+    const { data } = await api.post(
+        `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/archive`
+    );
+    return data;
+};
+
+export const restoreColumn = async (workspaceId, boardId, columnId) => {
+    const { data } = await api.post(
+        `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/restore`
+    );
+    return data;
+};
+
+export const getArchivedColumns = async (workspaceId, boardId) => {
+    const { data } = await api.get(
+        `/workspaces/${workspaceId}/boards/${boardId}/columns/archived`
+    );
+    return data;
+};
+
 export const getBoardMembers = async (workspaceId, boardId) => {
     const { data } = await api.get(`/workspaces/${workspaceId}/boards/${boardId}/members`);
     return data;

@@ -1,6 +1,22 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { DotsThree, Plus, PencilSimple, Trash, UserPlus, X } from "@phosphor-icons/react";
+import { Archive, DotsThree, Plus, PencilSimple, Trash, UserPlus, X } from "@phosphor-icons/react";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { AuthContext } from "../context/AuthContext";
 import { userWorkspacePath } from "../lib/routes";
 import { gradientFor } from "../lib/gradient";
@@ -9,6 +25,9 @@ import {
   updateBoard,
   deleteBoard,
   createColumn,
+  deleteColumn,
+  archiveColumn,
+  updateColumnOrder,
   getBoardMembers,
 } from "../services/boardService";
 import { Button } from "@/components/ui/button";
@@ -19,6 +38,7 @@ import {
   DropdownSeparator,
 } from "@/components/ui/dropdown-menu";
 import ShareBoardDialog from "../components/ShareBoardDialog";
+import ArchivedColumnsDialog from "../components/ArchivedColumnsDialog";
 import PresenceAvatars from "../components/PresenceAvatars";
 import { createHubConnection } from "../services/signalrClient";
 
@@ -35,9 +55,15 @@ const BoardDetail = () => {
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [archivesOpen, setArchivesOpen] = useState(false);
   const [presence, setPresence] = useState([]);
   const [members, setMembers] = useState([]);
   const newColumnRef = useRef(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => {
     let active = true;
@@ -179,6 +205,71 @@ const BoardDetail = () => {
     setNewColumnTitle("");
   };
 
+  const handleColumnDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const ordered = [...(board.columns ?? [])].sort((a, b) => a.order - b.order);
+    const oldIndex = ordered.findIndex((c) => c.id === active.id);
+    const newIndex = ordered.findIndex((c) => c.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const previous = board.columns;
+    const moved = arrayMove(ordered, oldIndex, newIndex).map((c, idx) => ({
+      ...c,
+      order: idx,
+    }));
+
+    setBoard((prev) => ({ ...prev, columns: moved }));
+
+    try {
+      await updateColumnOrder(workspaceId, boardId, active.id, newIndex);
+    } catch (error) {
+      alert(error.response?.data?.message || "Réorganisation impossible.");
+      setBoard((prev) => ({ ...prev, columns: previous }));
+    }
+  };
+
+  const handleArchiveColumn = async (columnId) => {
+    const previous = board.columns;
+    setBoard((prev) => ({
+      ...prev,
+      columns: (prev.columns ?? []).filter((c) => c.id !== columnId),
+    }));
+    try {
+      await archiveColumn(workspaceId, boardId, columnId);
+    } catch (error) {
+      alert(error.response?.data?.message || "Archivage impossible.");
+      setBoard((prev) => ({ ...prev, columns: previous }));
+    }
+  };
+
+  const handleDeleteColumn = async (columnId) => {
+    if (!window.confirm("Supprimer définitivement cette liste ?")) return;
+    const previous = board.columns;
+    setBoard((prev) => ({
+      ...prev,
+      columns: (prev.columns ?? []).filter((c) => c.id !== columnId),
+    }));
+    try {
+      await deleteColumn(workspaceId, boardId, columnId);
+    } catch (error) {
+      alert(error.response?.data?.message || "Suppression impossible.");
+      setBoard((prev) => ({ ...prev, columns: previous }));
+    }
+  };
+
+  const handleColumnRestored = (restored) => {
+    setBoard((prev) => {
+      const existing = prev.columns ?? [];
+      const nextOrder = existing.length;
+      return {
+        ...prev,
+        columns: [...existing, { ...restored, order: nextOrder }],
+      };
+    });
+  };
+
   return (
     <main className="flex h-[calc(100vh-4rem)] flex-col">
       <header className="flex items-center gap-3 border-b border-[#EDE0D4] bg-white px-4 py-3 md:px-6">
@@ -239,6 +330,9 @@ const BoardDetail = () => {
             >
               Renommer
             </DropdownItem>
+            <DropdownItem icon={Archive} onClick={() => setArchivesOpen(true)}>
+              Voir les archives
+            </DropdownItem>
             <DropdownSeparator />
             <DropdownItem icon={Trash} destructive onClick={handleDelete}>
               Supprimer le tableau
@@ -254,11 +348,35 @@ const BoardDetail = () => {
         boardId={boardId}
       />
 
+      <ArchivedColumnsDialog
+        open={archivesOpen}
+        onClose={() => setArchivesOpen(false)}
+        workspaceId={workspaceId}
+        boardId={boardId}
+        onRestored={handleColumnRestored}
+      />
+
       <div className="flex-1 overflow-x-auto overflow-y-hidden bg-[#FDFAF6]">
         <div className="flex h-full items-start gap-3 p-4 md:p-6">
-          {columns.map((column) => (
-            <BoardColumn key={column.id} column={column} />
-          ))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleColumnDragEnd}
+          >
+            <SortableContext
+              items={columns.map((c) => c.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              {columns.map((column) => (
+                <BoardColumn
+                  key={column.id}
+                  column={column}
+                  onArchive={() => handleArchiveColumn(column.id)}
+                  onDelete={() => handleDeleteColumn(column.id)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
 
           {addingColumn ? (
             <form
@@ -311,16 +429,54 @@ const BoardDetail = () => {
   );
 };
 
-const BoardColumn = ({ column }) => {
+const BoardColumn = ({ column, onArchive, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <section className="flex w-72 shrink-0 flex-col rounded-xl border border-[#EDE0D4] bg-white shadow-sm">
-      <header className="flex items-center justify-between gap-2 px-3 py-2.5">
-        <h3 className="truncate text-sm font-bold text-[#1C1410]">
+    <section
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="flex w-72 shrink-0 cursor-grab flex-col rounded-xl border border-[#EDE0D4] bg-white shadow-sm active:cursor-grabbing"
+    >
+      <header className="flex items-center gap-2 px-3 py-2.5">
+        <h3 className="flex-1 truncate text-sm font-bold text-[#1C1410]">
           {column.title}
         </h3>
         <span className="rounded-full border border-[#EDE0D4] bg-[#FFF8F2] px-2 py-0.5 text-[11px] font-bold text-[#7A6558]">
           0
         </span>
+        <div onPointerDown={(e) => e.stopPropagation()}>
+          <DropdownMenu
+            trigger={
+              <span className="flex size-7 items-center justify-center rounded-md text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
+                <DotsThree size={18} weight="bold" />
+              </span>
+            }
+          >
+            <DropdownItem icon={Archive} onClick={onArchive}>
+              Archiver la liste
+            </DropdownItem>
+            <DropdownSeparator />
+            <DropdownItem icon={Trash} destructive onClick={onDelete}>
+              Supprimer la liste
+            </DropdownItem>
+          </DropdownMenu>
+        </div>
       </header>
 
       <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
