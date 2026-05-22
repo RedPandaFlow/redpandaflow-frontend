@@ -1,0 +1,21 @@
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+
+const apiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:5090/api';
+const apiOrigin = apiBase.replace(/\/api\/?$/, '');
+
+export const createHubConnection = (path) =>
+    new HubConnectionBuilder()
+        .withUrl(`${apiOrigin}${path}`, {
+            accessTokenFactory: () => {
+                const stored = localStorage.getItem('user');
+                if (!stored) return '';
+                try {
+                    return JSON.parse(stored).accessToken ?? '';
+                } catch {
+                    return '';
+                }
+            }
+        })
+        .withAutomaticReconnect()
+        .configureLogging(LogLevel.Warning)
+        .build();
