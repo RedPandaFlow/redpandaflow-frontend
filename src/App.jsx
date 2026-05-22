@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from './context/AuthContext';
+import { userWorkspacePath } from './lib/routes';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -9,18 +11,21 @@ import WorkspaceDetail from './pages/WorkspaceDetail';
 
 function App() {
   const { user } = useContext(AuthContext);
+  const homePath = user ? userWorkspacePath(user) : "/login";
 
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/profile" />} />
-        <Route path="/register" element={!user ? <Register /> : <Navigate to="/profile" />} />
-        
-        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
-        <Route path="/workspaces" element={user ? <Workspaces /> : <Navigate to="/login" />} />
-        <Route path="/workspaces/:id" element={user ? <WorkspaceDetail /> : <Navigate to="/login" />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to={homePath} />} />
+        <Route path="/register" element={!user ? <Register /> : <Navigate to={homePath} />} />
 
-        <Route path="/" element={<Navigate to={user ? "/workspaces" : "/login"} />} />
+        <Route element={user ? <Layout /> : <Navigate to="/login" />}>
+          <Route path="/:username/workspaces" element={<Workspaces />} />
+          <Route path="/workspace/:id" element={<WorkspaceDetail />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to={homePath} replace />} />
       </Routes>
     </Router>
   );

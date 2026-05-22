@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { login } from "../services/authService";
+import { userWorkspacePath } from "../lib/routes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +29,7 @@ const Login = () => {
     try {
       const data = await login(email, password);
       setUser(data);
-      navigate("/profile");
+      navigate(userWorkspacePath(data));
     } catch (error) {
       alert(error.response?.data?.message || "Email ou mot de passe incorrect");
     } finally {

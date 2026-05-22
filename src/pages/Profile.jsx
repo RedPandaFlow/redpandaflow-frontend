@@ -1,6 +1,5 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import Navbar from "../components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -9,9 +8,9 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFAF6]">
+      <main className="max-w-2xl mx-auto py-12 px-4 md:px-0">
         <p className="text-[#9C8170] text-sm">Chargement…</p>
-      </div>
+      </main>
     );
   }
 
@@ -20,10 +19,7 @@ const Profile = () => {
   const initial = username.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FDFAF6]">
-      <Navbar />
-
-      <main className="max-w-2xl mx-auto py-12 px-4 md:px-0">
+    <main className="max-w-2xl mx-auto py-12 px-4 md:px-0">
         <div className="mb-8">
           <p className="text-sm font-semibold text-[#EA580C] mb-1">
             Votre espace
@@ -61,8 +57,7 @@ const Profile = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+    </main>
   );
 };
 
