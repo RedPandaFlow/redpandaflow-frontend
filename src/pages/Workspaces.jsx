@@ -4,7 +4,9 @@ import { CaretRight, Gear, Kanban, Plus, UsersThree } from "@phosphor-icons/reac
 import { AuthContext } from "../context/AuthContext";
 import { userWorkspacePath } from "../lib/routes";
 import { getWorkspaces } from "../services/workspaceService";
+import { getBoards } from "../services/boardService";
 import { gradientFor } from "../lib/gradient";
+import CreateBoardDialog from "../components/CreateBoardDialog";
 
 const WorkspaceAction = ({ icon: Icon, label, onClick }) => (
   <button
@@ -24,6 +26,7 @@ const Workspaces = () => {
   const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openIds, setOpenIds] = useState(() => new Set());
+  const [createBoardFor, setCreateBoardFor] = useState(null);
 
   const ownUsername = user?.user?.username;
   const wrongUser = ownUsername && username !== ownUsername;
@@ -33,7 +36,14 @@ const Workspaces = () => {
     (async () => {
       try {
         const data = await getWorkspaces();
-        if (active) setWorkspaces(data);
+        const boardsPerWorkspace = await Promise.all(
+          data.map((ws) => getBoards(ws.id).catch(() => []))
+        );
+        if (active) {
+          setWorkspaces(
+            data.map((ws, i) => ({ ...ws, boards: boardsPerWorkspace[i] }))
+          );
+        }
       } catch {
         alert("Impossible de charger les workspaces.");
       } finally {
@@ -122,7 +132,7 @@ const Workspaces = () => {
                     <WorkspaceAction
                       icon={Kanban}
                       label="Tableaux"
-                      onClick={() => toggle(ws.id)}
+                      onClick={() => navigate(`${detailPath}?tab=boards`)}
                     />
                     <WorkspaceAction
                       icon={UsersThree}
@@ -144,16 +154,19 @@ const Workspaces = () => {
                         <button
                           key={board.id}
                           type="button"
+                          onClick={() =>
+                            navigate(`/workspace/${ws.id}/board/${board.id}`)
+                          }
                           className="overflow-hidden rounded-lg border border-[#EDE0D4] bg-white text-left transition-colors hover:border-orange-200"
                         >
                           <div
                             className={`h-20 bg-linear-to-br ${gradientFor(
-                              board.name
+                              board.title
                             )}`}
                           />
                           <div className="px-3 py-2.5">
                             <span className="block truncate text-sm font-semibold text-[#1C1410]">
-                              {board.name}
+                              {board.title}
                             </span>
                           </div>
                         </button>
@@ -161,15 +174,12 @@ const Workspaces = () => {
 
                       <button
                         type="button"
-                        disabled
-                        className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] opacity-70"
+                        onClick={() => setCreateBoardFor(ws.id)}
+                        className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] transition-colors hover:border-orange-200 hover:text-[#EA580C]"
                       >
                         <Plus size={20} />
                         <span className="text-sm font-semibold">
                           Créer un tableau
-                        </span>
-                        <span className="text-[10px] uppercase tracking-wide">
-                          Bientôt disponible
                         </span>
                       </button>
                     </div>
@@ -186,6 +196,12 @@ const Workspaces = () => {
           })}
         </div>
       )}
+
+      <CreateBoardDialog
+        open={createBoardFor !== null}
+        onClose={() => setCreateBoardFor(null)}
+        workspaceId={createBoardFor}
+      />
     </main>
   );
 };
