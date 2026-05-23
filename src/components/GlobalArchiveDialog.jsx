@@ -136,16 +136,25 @@ const GlobalArchiveDialog = ({
         ) : (
           <ul className="flex flex-col gap-2">
             {archivedCards.map((card) => {
+              const parentColumn = board.columns.find(
+                (c) => c.id === card.columnId,
+              );
               const colName =
                 board.columns.find((c) => c.id === card.columnId)?.title ||
                 "Inconnue";
+              const isColumnArchived = parentColumn?.isArchived === true;
               return (
                 <ArchiveItem
                   key={card.id}
                   title={card.title}
-                  subtitle={`Dans : ${colName}`}
-                  onRestore={() => handleRestoreCard(card)}
+                  subtitle={
+                    isColumnArchived
+                      ? `Bloqué : La liste "${colName}" est archivée`
+                      : `Origine : La liste "${colName}" est active`
+                  }
+                  onRestore={() => !isColumnArchived && handleRestoreCard(card)}
                   isBusy={busyId === card.id}
+                  isDisabled={isColumnArchived}
                 />
               );
             })}
@@ -163,20 +172,28 @@ const EmptyState = ({ message }) => (
   </div>
 );
 
-const ArchiveItem = ({ title, subtitle, onRestore, isBusy }) => (
+const ArchiveItem = ({ title, subtitle, onRestore, isBusy, isDisabled }) => (
   <li className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE0D4] bg-white px-4 py-3 shadow-sm">
     <div className="flex flex-col min-w-0">
       <span className="truncate text-sm font-bold text-[#1C1410]">{title}</span>
       {subtitle && (
-        <span className="text-[11px] text-[#9C8170]">{subtitle}</span>
+        <span
+          className={`text-[11px] ${isDisabled ? "text-red-700 font-medium" : "text-[#9C8170]"}`}
+        >
+          {subtitle}
+        </span>
       )}
     </div>
     <Button
       variant="ghost"
       size="sm"
       onClick={onRestore}
-      disabled={isBusy}
-      className="flex shrink-0 items-center gap-1.5 text-[#EA580C] hover:bg-orange-50"
+      disabled={isBusy || isDisabled}
+      className={`flex shrink-0 items-center gap-1.5 transition-colors ${
+        isDisabled
+          ? "text-gray-400 cursor-not-allowed hover:bg-transparent"
+          : "text-[#EA580C] hover:bg-orange-50"
+      }`}
     >
       <ArrowCounterClockwise size={16} weight="bold" />
       <span className="text-xs font-bold">{isBusy ? "..." : "Restaurer"}</span>

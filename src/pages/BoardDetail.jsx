@@ -519,7 +519,7 @@ const BoardDetail = () => {
         await updateCardOrder(
           workspaceId,
           boardId,
-          originalColumnIdRef.current, 
+          originalColumnIdRef.current,
           activeId,
           {
             newColumnId: destColumn.id,
@@ -771,7 +771,6 @@ const BoardDetail = () => {
           )}
         </div>
       </div>
-      {/* ... ton DndContext et formulaire d'ajout ... */}
 
       <EditCardDialog
         isOpen={!!selectedCard}
