@@ -2,7 +2,6 @@ import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChartLine, Gear, SignOut, UserCircle } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
-import { logout } from "../services/authService";
 import { UserAvatar } from "./UserAvatar";
 import {
   DropdownItem,
@@ -12,16 +11,15 @@ import {
 } from "./ui/dropdown-menu";
 
 const UserMenu = () => {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const username = user?.user?.username ?? "Utilisateur";
-  const email = user?.user?.email ?? "";
-  const avatarUrl = user?.user?.avatarUrl;
+  const username = user?.username ?? "Utilisateur";
+  const email = user?.email ?? "";
+  const avatarUrl = user?.avatarUrl;
 
-  const handleLogout = () => {
-    logout();
-    setUser(null);
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 

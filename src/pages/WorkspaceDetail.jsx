@@ -33,7 +33,7 @@ const WorkspaceDetail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useContext(AuthContext);
-  const currentUserId = user?.user?.id;
+  const currentUserId = user?.id;
 
   const [workspace, setWorkspace] = useState(null);
   const [members, setMembers] = useState([]);

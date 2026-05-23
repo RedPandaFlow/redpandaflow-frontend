@@ -11,7 +11,16 @@ import WorkspaceDetail from './pages/WorkspaceDetail';
 import BoardDetail from './pages/BoardDetail';
 
 function App() {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFAF6]">
+        <p className="text-sm text-[#9C8170]">Chargement…</p>
+      </div>
+    );
+  }
+
   const homePath = user ? userWorkspacePath(user) : "/login";
 
   return (

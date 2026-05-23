@@ -14,8 +14,8 @@ const Profile = () => {
     );
   }
 
-  const username = user?.user?.username ?? "—";
-  const email = user?.user?.email ?? "—";
+  const username = user?.username ?? "—";
+  const email = user?.email ?? "—";
   const initial = username.charAt(0).toUpperCase();
 
   return (

@@ -51,7 +51,7 @@ const PresenceAvatarItem = ({ user, currentUserId, online, open, onToggle, onClo
 
 const PresenceAvatars = ({ members, presence }) => {
   const { user } = useContext(AuthContext);
-  const currentUserId = user?.user?.id;
+  const currentUserId = user?.id;
   const [openUserId, setOpenUserId] = useState(null);
 
   const list = useMemo(() => {
