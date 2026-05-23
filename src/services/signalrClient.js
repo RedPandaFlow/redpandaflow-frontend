@@ -13,17 +13,7 @@ export const getBoardConnectionId = () => activeBoardConnectionId;
 
 export const createHubConnection = (path) =>
     new HubConnectionBuilder()
-        .withUrl(`${apiOrigin}${path}`, {
-            accessTokenFactory: () => {
-                const stored = localStorage.getItem('user');
-                if (!stored) return '';
-                try {
-                    return JSON.parse(stored).accessToken ?? '';
-                } catch {
-                    return '';
-                }
-            }
-        })
+        .withUrl(`${apiOrigin}${path}`, { withCredentials: true })
         .withAutomaticReconnect()
         .configureLogging(LogLevel.Warning)
         .build();

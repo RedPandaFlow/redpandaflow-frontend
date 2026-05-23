@@ -44,7 +44,7 @@ const Workspaces = () => {
   const [openIds, setOpenIds] = useState(() => new Set());
   const [createBoardFor, setCreateBoardFor] = useState(null);
 
-  const ownUsername = user?.user?.username;
+  const ownUsername = user?.username;
   const wrongUser = ownUsername && username !== ownUsername;
 
   useEffect(() => {

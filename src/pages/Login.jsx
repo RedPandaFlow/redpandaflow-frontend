@@ -39,8 +39,8 @@ const Login = () => {
   const onSubmit = async (values) => {
     try {
       const data = await login(values.email, values.password);
-      setUser(data);
-      navigate(userWorkspacePath(data));
+      setUser(data.user);
+      navigate(userWorkspacePath(data.user));
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Email ou mot de passe incorrect.",

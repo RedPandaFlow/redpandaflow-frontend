@@ -36,7 +36,7 @@ const selectClass =
 
 const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
   const { user } = useContext(AuthContext);
-  const currentUserId = user?.user?.id;
+  const currentUserId = user?.id;
 
   const [boardMembers, setBoardMembers] = useState([]);
   const [workspaceMembers, setWorkspaceMembers] = useState([]);
