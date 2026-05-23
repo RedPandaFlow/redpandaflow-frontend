@@ -1,11 +1,14 @@
-import { useState, useContext } from "react";
+import { useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { AuthContext } from "../context/AuthContext";
 import { login } from "../services/authService";
 import { userWorkspacePath } from "../lib/routes";
+import { loginSchema } from "../lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -15,25 +18,33 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const form = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const onSubmit = async (values) => {
     try {
-      const data = await login(email, password);
+      const data = await login(values.email, values.password);
       setUser(data);
       navigate(userWorkspacePath(data));
     } catch (error) {
-      alert(error.response?.data?.message || "Email ou mot de passe incorrect");
-    } finally {
-      setLoading(false);
+      toast.error(
+        error.response?.data?.message || "Email ou mot de passe incorrect.",
+      );
     }
   };
 
@@ -41,9 +52,6 @@ const Login = () => {
     <div className="min-h-screen flex bg-[#FDFAF6]">
       <div className="flex-1 flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-100">
-          <div className="lg:hidden text-center mb-8">
-          </div>
-
           <Card className="border shadow-sm border-[#EDE0D4] bg-white">
             <CardHeader className="pb-4">
               <CardTitle
@@ -58,51 +66,63 @@ const Login = () => {
             </CardHeader>
 
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="email"
-                    className="text-xs font-semibold uppercase tracking-widest text-[#9C8170]"
-                  >
-                    Adresse email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="nom@exemple.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="password"
-                    className="text-xs font-semibold uppercase tracking-widest text-[#9C8170]"
-                  >
-                    Mot de passe
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full font-semibold bg-[#EA580C] hover:bg-[#C2410C] mt-2"
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                  noValidate
                 >
-                  {loading ? "Connexion…" : "Se connecter →"}
-                </Button>
-              </form>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Adresse email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="nom@exemple.com"
+                            autoComplete="email"
+                            className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mot de passe</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            autoComplete="current-password"
+                            className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                    className="w-full font-semibold bg-[#EA580C] hover:bg-[#C2410C] mt-2"
+                  >
+                    {form.formState.isSubmitting
+                      ? "Connexion…"
+                      : "Se connecter →"}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
 
             <CardFooter className="flex flex-col gap-4 pt-0">

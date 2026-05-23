@@ -1,4 +1,7 @@
 import { useContext, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { SignOut, Link as LinkIcon } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import {
@@ -8,9 +11,17 @@ import {
   removeBoardMember,
 } from "../services/boardService";
 import { getMembers } from "../services/workspaceService";
+import { inviteMemberSchema } from "../lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import { UserAvatar } from "./UserAvatar";
 
 const ROLES = ["Admin", "Member", "Viewer"];
@@ -32,8 +43,11 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [inviteValue, setInviteValue] = useState("");
-  const [inviteRole, setInviteRole] = useState("Member");
+
+  const inviteForm = useForm({
+    resolver: zodResolver(inviteMemberSchema),
+    defaultValues: { email: "", role: "Member" },
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -72,21 +86,21 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
   const currentMember = boardMembers.find((m) => m.userId === currentUserId);
   const isAdmin = currentMember?.role === "Admin";
 
-  const handleInvite = async (e) => {
-    e.preventDefault();
-    if (!inviteValue.trim()) return;
+  const handleInvite = async (values) => {
     setBusy(true);
     setError("");
     try {
       const member = await inviteBoardMember(workspaceId, boardId, {
-        email: inviteValue.trim(),
-        role: inviteRole,
+        email: values.email,
+        role: values.role,
       });
       setBoardMembers((prev) => [...prev, member]);
-      setInviteValue("");
-      setInviteRole("Member");
+      inviteForm.reset({ email: "", role: "Member" });
+      toast.success("Invitation envoyée.");
     } catch (err) {
-      setError(err.response?.data?.message || "Invitation impossible.");
+      const message = err.response?.data?.message || "Invitation impossible.";
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -151,35 +165,60 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
     >
       <div className="space-y-5">
         {isAdmin && (
-          <form onSubmit={handleInvite} className="flex flex-wrap items-stretch gap-2">
-            <Input
-              type="email"
-              value={inviteValue}
-              onChange={(e) => setInviteValue(e.target.value)}
-              placeholder="Adresse e-mail"
-              disabled={busy}
-              className="min-w-0 flex-1 border-[#EDE0D4] bg-[#FFF8F2] focus-visible:ring-orange-500"
-            />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value)}
-              disabled={busy}
-              className={selectClass}
+          <Form {...inviteForm}>
+            <form
+              onSubmit={inviteForm.handleSubmit(handleInvite)}
+              className="flex flex-wrap items-stretch gap-2"
+              noValidate
             >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </option>
-              ))}
-            </select>
-            <Button
-              type="submit"
-              disabled={busy || !inviteValue.trim()}
-              className="bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
-            >
-              Partager
-            </Button>
-          </form>
+              <FormField
+                control={inviteForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="min-w-0 flex-1 space-y-1">
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Adresse e-mail"
+                        disabled={busy}
+                        className="border-[#EDE0D4] bg-[#FFF8F2] focus-visible:ring-orange-500"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={inviteForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormControl>
+                      <select
+                        disabled={busy}
+                        className={selectClass}
+                        {...field}
+                      >
+                        {ROLES.map((r) => (
+                          <option key={r} value={r}>
+                            {ROLE_LABELS[r]}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                disabled={busy}
+                className="bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
+              >
+                Partager
+              </Button>
+            </form>
+          </Form>
         )}
 
         <div className="flex items-start gap-3 rounded-lg border border-[#EDE0D4] bg-[#FFF8F2] px-3 py-2.5 text-[#9C8170]">
