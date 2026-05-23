@@ -1,9 +1,11 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { register } from "../services/authService";
+import { registerSchema } from "../lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -13,65 +15,77 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+const fields = [
+  {
+    name: "username",
+    label: "Nom d'utilisateur",
+    type: "text",
+    placeholder: "panda_roux42",
+    autoComplete: "username",
+  },
+  {
+    name: "email",
+    label: "Adresse email",
+    type: "email",
+    placeholder: "nom@exemple.com",
+    autoComplete: "email",
+  },
+  {
+    name: "password",
+    label: "Mot de passe",
+    type: "password",
+    placeholder: "••••••••",
+    autoComplete: "new-password",
+    description: "12 caractères minimum.",
+  },
+  {
+    name: "confirmPassword",
+    label: "Confirmer",
+    type: "password",
+    placeholder: "••••••••",
+    autoComplete: "new-password",
+  },
+];
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const form = useForm({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const onSubmit = async (values) => {
     try {
       await register(
-        formData.username,
-        formData.email,
-        formData.password,
-        formData.confirmPassword,
+        values.username,
+        values.email,
+        values.password,
+        values.confirmPassword,
       );
-      alert("Inscription réussie ! Connectez-vous.");
+      toast.success("Inscription réussie. Connectez-vous.");
       navigate("/login");
-    } catch (err) {
-      alert(err.response?.data?.message || "Erreur lors de l'inscription");
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Erreur lors de l'inscription.",
+      );
     }
   };
-
-  const set = (key) => (e) =>
-    setFormData({ ...formData, [key]: e.target.value });
-
-  const fields = [
-    {
-      key: "username",
-      label: "Nom d'utilisateur",
-      type: "text",
-      placeholder: "panda_roux42",
-    },
-    {
-      key: "email",
-      label: "Adresse email",
-      type: "email",
-      placeholder: "nom@exemple.com",
-    },
-    {
-      key: "password",
-      label: "Mot de passe",
-      type: "password",
-      placeholder: "••••••••",
-    },
-    {
-      key: "confirmPassword",
-      label: "Confirmer",
-      type: "password",
-      placeholder: "••••••••",
-    },
-  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FDFAF6] p-6">
@@ -105,35 +119,49 @@ const Register = () => {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {fields.map(({ key, label, type, placeholder }) => (
-                <div key={key} className="space-y-1.5">
-                  <Label
-                    htmlFor={key}
-                    className="text-xs font-semibold uppercase tracking-widest text-[#9C8170]"
-                  >
-                    {label}
-                  </Label>
-                  <Input
-                    id={key}
-                    type={type}
-                    placeholder={placeholder}
-                    value={formData[key]}
-                    onChange={set(key)}
-                    required
-                    className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
-                  />
-                </div>
-              ))}
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full font-semibold bg-[#EA580C] hover:bg-[#C2410C] mt-2"
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+                noValidate
               >
-                {loading ? "Inscription…" : "Créer mon compte →"}
-              </Button>
-            </form>
+                {fields.map((f) => (
+                  <FormField
+                    key={f.name}
+                    control={form.control}
+                    name={f.name}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{f.label}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type={f.type}
+                            placeholder={f.placeholder}
+                            autoComplete={f.autoComplete}
+                            className="bg-[#FFF8F2] border-[#EDE0D4] focus-visible:ring-orange-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        {f.description && (
+                          <FormDescription>{f.description}</FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                  className="w-full font-semibold bg-[#EA580C] hover:bg-[#C2410C] mt-2"
+                >
+                  {form.formState.isSubmitting
+                    ? "Inscription…"
+                    : "Créer mon compte →"}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4 pt-0">
