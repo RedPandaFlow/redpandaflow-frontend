@@ -48,7 +48,6 @@ import {
   DropdownSeparator,
 } from "@/components/ui/dropdown-menu";
 import ShareBoardDialog from "../components/ShareBoardDialog";
-import ArchivedColumnsDialog from "../components/ArchivedColumnsDialog";
 import PresenceAvatars from "../components/PresenceAvatars";
 import {
   createHubConnection,
@@ -56,6 +55,8 @@ import {
 } from "../services/signalrClient";
 import CardItem from "../components/CardItem";
 import { createCard, updateCardOrder } from "../services/cardService";
+import EditCardDialog from "../components/EditCardDialog";
+import GlobalArchiveDialog from "../components/GlobalArchiveDialog";
 
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
@@ -70,10 +71,11 @@ const BoardDetail = () => {
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [archivesOpen, setArchivesOpen] = useState(false);
   const [presence, setPresence] = useState([]);
   const [members, setMembers] = useState([]);
   const [activeDragItem, setActiveDragItem] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const originalColumnIdRef = useRef(null);
   const newColumnRef = useRef(null);
 
@@ -154,17 +156,19 @@ const BoardDetail = () => {
       setBoard((prev) => {
         if (!prev) return prev;
         const existing = prev.columns ?? [];
-        if (incoming.isArchived) {
-          return {
-            ...prev,
-            columns: existing.filter((c) => c.id !== incoming.id),
-          };
-        }
-        const found = existing.some((c) => c.id === incoming.id);
-        const next = found
-          ? existing.map((c) =>
-              c.id === incoming.id ? { ...c, ...incoming } : c,
-            )
+        const next = existing.some((c) => c.id === incoming.id)
+          ? existing.map((c) => {
+              if (c.id === incoming.id) {
+                const cardsCascade = incoming.isArchived
+                  ? (c.cards || []).map((card) => ({
+                      ...card,
+                      isArchived: true,
+                    }))
+                  : c.cards || [];
+                return { ...c, ...incoming, cards: cardsCascade };
+              }
+              return c;
+            })
           : [...existing, incoming];
         return { ...prev, columns: next };
       });
@@ -184,14 +188,24 @@ const BoardDetail = () => {
 
     connection.on("ColumnArchived", (payload) => {
       if (cancelled || !payload?.id) return;
-      setBoard((prev) =>
-        prev
-          ? {
-              ...prev,
-              columns: (prev.columns ?? []).filter((c) => c.id !== payload.id),
-            }
-          : prev,
-      );
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: (prev.columns ?? []).map((c) =>
+            c.id === payload.id
+              ? {
+                  ...c,
+                  isArchived: true,
+                  cards: (c.cards || []).map((card) => ({
+                    ...card,
+                    isArchived: true,
+                  })),
+                }
+              : c,
+          ),
+        };
+      });
     });
 
     connection.on("ColumnRestored", (payload) => {
@@ -278,7 +292,11 @@ const BoardDetail = () => {
 
   if (!board) return null;
 
-  const columns = [...(board.columns ?? [])].sort((a, b) => a.order - b.order);
+  const allColumnsSorted = [...(board.columns ?? [])].sort(
+    (a, b) => a.order - b.order,
+  );
+
+  const columns = allColumnsSorted.filter((c) => !c.isArchived);
 
   const commitTitle = async () => {
     const next = titleDraft.trim();
@@ -501,7 +519,7 @@ const BoardDetail = () => {
         await updateCardOrder(
           workspaceId,
           boardId,
-          originalColumnIdRef.current, // <--- On utilise la mémoire ici !
+          originalColumnIdRef.current, 
           activeId,
           {
             newColumnId: destColumn.id,
@@ -519,13 +537,25 @@ const BoardDetail = () => {
   };
 
   const handleArchiveColumn = async (columnId) => {
-    const previous = board.columns;
-    setBoard((prev) => ({
-      ...prev,
-      columns: (prev.columns ?? []).filter((c) => c.id !== columnId),
-    }));
     try {
       await archiveColumn(workspaceId, boardId, columnId);
+
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: prev.columns.map((c) => {
+            if (c.id === columnId) {
+              const updatedCards = (c.cards || []).map((card) => ({
+                ...card,
+                isArchived: true,
+              }));
+              return { ...c, isArchived: true, cards: updatedCards };
+            }
+            return c;
+          }),
+        };
+      });
     } catch (error) {
       alert(error.response?.data?.message || "Archivage impossible.");
       setBoard((prev) => ({ ...prev, columns: previous }));
@@ -618,7 +648,7 @@ const BoardDetail = () => {
             >
               Renommer
             </DropdownItem>
-            <DropdownItem icon={Archive} onClick={() => setArchivesOpen(true)}>
+            <DropdownItem icon={Archive} onClick={() => setIsArchiveOpen(true)}>
               Voir les archives
             </DropdownItem>
             <DropdownSeparator />
@@ -634,14 +664,6 @@ const BoardDetail = () => {
         onClose={() => setShareOpen(false)}
         workspaceId={workspaceId}
         boardId={boardId}
-      />
-
-      <ArchivedColumnsDialog
-        open={archivesOpen}
-        onClose={() => setArchivesOpen(false)}
-        workspaceId={workspaceId}
-        boardId={boardId}
-        onRestored={handleColumnRestored}
       />
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden bg-[#FDFAF6]">
@@ -666,6 +688,7 @@ const BoardDetail = () => {
                   boardId={boardId}
                   onArchive={() => handleArchiveColumn(column.id)}
                   onDelete={() => handleDeleteColumn(column.id)}
+                  onCardClick={(card) => setSelectedCard(card)}
                   onCardCreated={(columnId, newCard) => {
                     setBoard((prev) => ({
                       ...prev,
@@ -748,6 +771,63 @@ const BoardDetail = () => {
           )}
         </div>
       </div>
+      {/* ... ton DndContext et formulaire d'ajout ... */}
+
+      <EditCardDialog
+        isOpen={!!selectedCard}
+        onClose={() => setSelectedCard(null)}
+        card={selectedCard}
+        workspaceId={workspaceId}
+        boardId={boardId}
+        onCardUpdated={(columnId, updatedCard) => {
+          setBoard((prev) => ({
+            ...prev,
+            columns: prev.columns.map((c) =>
+              c.id === columnId
+                ? {
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === updatedCard.id ? updatedCard : card,
+                    ),
+                  }
+                : c,
+            ),
+          }));
+        }}
+        onCardDeleted={(columnId, cardId) => {
+          setBoard((prev) => ({
+            ...prev,
+            columns: prev.columns.map((c) =>
+              c.id === columnId
+                ? { ...c, cards: c.cards.filter((card) => card.id !== cardId) }
+                : c,
+            ),
+          }));
+        }}
+      />
+      <GlobalArchiveDialog
+        open={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+        board={board}
+        workspaceId={workspaceId}
+        boardId={boardId}
+        onColumnRestored={handleColumnRestored}
+        onCardRestored={(columnId, updatedCard) => {
+          setBoard((prev) => ({
+            ...prev,
+            columns: prev.columns.map((c) =>
+              c.id === columnId
+                ? {
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === updatedCard.id ? updatedCard : card,
+                    ),
+                  }
+                : c,
+            ),
+          }));
+        }}
+      />
     </main>
   );
 };
@@ -758,6 +838,7 @@ const BoardColumn = ({
   onArchive,
   onDelete,
   onCardCreated,
+  onCardClick,
 }) => {
   const [addingCard, setAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
@@ -786,7 +867,9 @@ const BoardColumn = ({
     if (addingCard) newCardRef.current?.focus();
   }, [addingCard]);
 
-  const cards = [...(column.cards ?? [])].sort((a, b) => a.order - b.order);
+  const cards = [...(column.cards ?? [])]
+    .filter((c) => !c.isArchived)
+    .sort((a, b) => a.order - b.order);
 
   const handleAddCard = async (e) => {
     e.preventDefault();
@@ -851,7 +934,7 @@ const BoardColumn = ({
             <CardItem
               key={card.id}
               card={card}
-              onClick={(c) => console.log("Ouvrir carte", c)}
+              onClick={() => onCardClick(card)}
             />
           ))}
         </SortableContext>
