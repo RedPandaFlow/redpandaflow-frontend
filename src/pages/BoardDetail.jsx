@@ -40,7 +40,7 @@ import {
 import ShareBoardDialog from "../components/ShareBoardDialog";
 import ArchivedColumnsDialog from "../components/ArchivedColumnsDialog";
 import PresenceAvatars from "../components/PresenceAvatars";
-import { createHubConnection } from "../services/signalrClient";
+import { createHubConnection, setBoardConnectionId } from "../services/signalrClient";
 
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
@@ -104,6 +104,105 @@ const BoardDetail = () => {
       setPresence(payload?.users ?? []);
     });
 
+    connection.on("BoardUpdated", (payload) => {
+      if (cancelled || !payload) return;
+      setBoard((prev) => (prev ? { ...prev, title: payload.title ?? prev.title } : prev));
+      setTitleDraft((prev) => (payload.title ?? prev));
+    });
+
+    connection.on("BoardDeleted", () => {
+      if (cancelled) return;
+      alert("Ce tableau vient d'être supprimé.");
+      navigate(userWorkspacePath(user));
+    });
+
+    connection.on("ColumnCreated", (payload) => {
+      if (cancelled || !payload?.column) return;
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const existing = prev.columns ?? [];
+        if (existing.some((c) => c.id === payload.column.id)) return prev;
+        return { ...prev, columns: [...existing, payload.column] };
+      });
+    });
+
+    connection.on("ColumnUpdated", (payload) => {
+      if (cancelled || !payload?.column) return;
+      const incoming = payload.column;
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const existing = prev.columns ?? [];
+        if (incoming.isArchived) {
+          return { ...prev, columns: existing.filter((c) => c.id !== incoming.id) };
+        }
+        const found = existing.some((c) => c.id === incoming.id);
+        const next = found
+          ? existing.map((c) => (c.id === incoming.id ? { ...c, ...incoming } : c))
+          : [...existing, incoming];
+        return { ...prev, columns: next };
+      });
+    });
+
+    connection.on("ColumnDeleted", (payload) => {
+      if (cancelled || !payload?.id) return;
+      setBoard((prev) =>
+        prev
+          ? { ...prev, columns: (prev.columns ?? []).filter((c) => c.id !== payload.id) }
+          : prev
+      );
+    });
+
+    connection.on("ColumnArchived", (payload) => {
+      if (cancelled || !payload?.id) return;
+      setBoard((prev) =>
+        prev
+          ? { ...prev, columns: (prev.columns ?? []).filter((c) => c.id !== payload.id) }
+          : prev
+      );
+    });
+
+    connection.on("ColumnRestored", (payload) => {
+      if (cancelled || !payload?.column) return;
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const existing = prev.columns ?? [];
+        if (existing.some((c) => c.id === payload.column.id)) return prev;
+        return { ...prev, columns: [...existing, payload.column] };
+      });
+    });
+
+    connection.on("ColumnOrderChanged", (payload) => {
+      if (cancelled || !payload?.columnId) return;
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const ordered = [...(prev.columns ?? [])].sort((a, b) => a.order - b.order);
+        const oldIndex = ordered.findIndex((c) => c.id === payload.columnId);
+        const newIndex = Math.max(0, Math.min(payload.newOrder ?? 0, ordered.length - 1));
+        if (oldIndex < 0 || oldIndex === newIndex) return prev;
+        const moved = arrayMove(ordered, oldIndex, newIndex).map((c, idx) => ({
+          ...c,
+          order: idx,
+        }));
+        return { ...prev, columns: moved };
+      });
+    });
+
+    connection.onreconnected(async () => {
+      if (cancelled) return;
+      setBoardConnectionId(connection.connectionId);
+      try {
+        await connection.invoke("JoinBoard", boardId);
+        const fresh = await getBoard(workspaceId, boardId);
+        if (!cancelled) setBoard(fresh);
+      } catch (err) {
+        console.error("Reconnect rejoin failed", err);
+      }
+    });
+
+    connection.onreconnecting(() => {
+      setBoardConnectionId(null);
+    });
+
     (async () => {
       try {
         await connection.start();
@@ -111,6 +210,7 @@ const BoardDetail = () => {
           await connection.stop();
           return;
         }
+        setBoardConnectionId(connection.connectionId);
         await connection.invoke("JoinBoard", boardId);
       } catch (err) {
         if (!cancelled) console.error("Presence connection failed", err);
@@ -120,6 +220,7 @@ const BoardDetail = () => {
     return () => {
       cancelled = true;
       setPresence([]);
+      setBoardConnectionId(null);
       (async () => {
         try {
           if (connection.state === "Connected") {
@@ -135,7 +236,7 @@ const BoardDetail = () => {
         }
       })();
     };
-  }, [boardId]);
+  }, [boardId, workspaceId, navigate, user]);
 
   if (loading) {
     return (
