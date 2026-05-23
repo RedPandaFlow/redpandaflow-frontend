@@ -35,14 +35,14 @@ export const updateCardOrder = async (workspaceId, boardId, columnId, cardId, pa
     return data;
 };
 
-export const archiveCard = async (workspaceId, boardId, columnId) => {
+export const archiveCard = async (workspaceId, boardId, columnId, cardId) => {
     const { data } = await api.post(
         `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/${cardId}/archive`
     );
     return data;
 };
 
-export const restoreCard = async (workspaceId, boardId, columnId) => {
+export const restoreCard = async (workspaceId, boardId, columnId, cardId) => {
     const { data } = await api.post(
         `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/${cardId}/restore`
     );
@@ -56,7 +56,7 @@ export const getArchivedCardsByBoard = async (workspaceId, boardId) => {
     return data;
 };
 
-export const getArchivedCardsByColumn = async (workspaceId, boardId) => {
+export const getArchivedCardsByColumn = async (workspaceId, boardId, columnId) => {
     const { data } = await api.get(
         `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/archived`
     );

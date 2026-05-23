@@ -50,6 +50,8 @@ import ShareBoardDialog from "../components/ShareBoardDialog";
 import ArchivedColumnsDialog from "../components/ArchivedColumnsDialog";
 import PresenceAvatars from "../components/PresenceAvatars";
 import { createHubConnection, setBoardConnectionId } from "../services/signalrClient";
+import CardItem from "../components/CardItem";
+import { createCard, updateCardOrder } from "../services/cardService";
 
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
@@ -234,18 +236,10 @@ const BoardDetail = () => {
       setPresence([]);
       setBoardConnectionId(null);
       (async () => {
-        try {
-          if (connection.state === "Connected") {
-            await connection.invoke("LeaveBoard", boardId);
-          }
-        } catch {
-          /* ignore */
+        if (connection.state === "Connected") {
+          await connection.invoke("LeaveBoard", boardId).catch(() => undefined);
         }
-        try {
-          await connection.stop();
-        } catch {
-          /* ignore */
-        }
+        await connection.stop().catch(() => undefined);
       })();
     };
   }, [boardId, workspaceId, navigate, user]);
@@ -327,7 +321,6 @@ const BoardDetail = () => {
     const activeType = active.data.current?.type;
     const overType = over.data.current?.type;
 
-    // --- 1. DÉPLACEMENT DE COLONNE ---
     if (activeType === "Column" && overType === "Column") {
       if (active.id === over.id) return;
       const ordered = [...(board.columns ?? [])].sort(
@@ -353,17 +346,14 @@ const BoardDetail = () => {
       return;
     }
 
-    // --- 2. DÉPLACEMENT DE CARTE ---
     if (activeType === "Card") {
       const activeId = active.id;
       const overId = over.id;
 
-      // Trouver la colonne d'origine
       const sourceColumn = board.columns.find((c) =>
         c.cards?.some((card) => card.id === activeId),
       );
 
-      // Trouver la colonne de destination (soit on survole une colonne, soit une autre carte)
       const destColumn =
         overType === "Column"
           ? board.columns.find((c) => c.id === overId)
@@ -385,9 +375,8 @@ const BoardDetail = () => {
           ? destCards.length
           : destCards.findIndex((c) => c.id === overId);
 
-      const previousColumns = board.columns; // Sauvegarde en cas d'erreur
+      const previousColumns = board.columns;
 
-      // A. Mouvement dans la MÊME colonne
       if (sourceColumn.id === destColumn.id) {
         if (activeIndex === overIndex) return;
         const movedCards = arrayMove(sourceCards, activeIndex, overIndex).map(
@@ -401,15 +390,14 @@ const BoardDetail = () => {
           ),
         }));
       }
-      // B. Mouvement vers une AUTRE colonne
       else {
         const [movedCard] = sourceCards.splice(activeIndex, 1);
         movedCard.columnId = destColumn.id;
-        destCards.splice(overIndex, 0, movedCard); // Insertion
+        destCards.splice(overIndex, 0, movedCard);
         const finalDestCards = destCards.map((c, idx) => ({
           ...c,
           order: idx,
-        })); // Recalcul de l'ordre
+        }));
 
         setBoard((prev) => ({
           ...prev,
@@ -421,15 +409,14 @@ const BoardDetail = () => {
         }));
       }
 
-      // Appel à ton API C#
       try {
         await updateCardOrder(workspaceId, boardId, sourceColumn.id, activeId, {
           newColumnId: destColumn.id,
           newOrder: overIndex >= 0 ? overIndex : 0,
         });
       } catch (error) {
-        alert("Erreur lors du déplacement de la carte.");
-        setBoard((prev) => ({ ...prev, columns: previousColumns })); // Annulation visuelle
+        alert(error.response?.data?.message || "Erreur lors du déplacement de la carte.");
+        setBoard((prev) => ({ ...prev, columns: previousColumns }));
       }
     }
   };
@@ -580,7 +567,6 @@ const BoardDetail = () => {
                   onArchive={() => handleArchiveColumn(column.id)}
                   onDelete={() => handleDeleteColumn(column.id)}
                   onCardCreated={(columnId, newCard) => {
-                    // Met à jour l'écran avec la nouvelle carte
                     setBoard((prev) => ({
                       ...prev,
                       columns: prev.columns.map((c) =>
@@ -682,7 +668,6 @@ const BoardColumn = ({
     if (addingCard) newCardRef.current?.focus();
   }, [addingCard]);
 
-  // Les cartes triées par leur ordre
   const cards = [...(column.cards ?? [])].sort((a, b) => a.order - b.order);
 
   const handleAddCard = async (e) => {
@@ -695,7 +680,7 @@ const BoardColumn = ({
       });
       setNewCardTitle("");
       setAddingCard(false);
-      onCardCreated(column.id, createdCard); // Dit au parent de mettre à jour l'écran
+      onCardCreated(column.id, createdCard);
     } catch (error) {
       alert(error.response?.data?.message || "Impossible de créer la carte.");
     } finally {
@@ -709,7 +694,6 @@ const BoardColumn = ({
       style={style}
       className="flex w-72 shrink-0 flex-col rounded-xl border border-[#EDE0D4] bg-[#FDFAF6] shadow-sm"
     >
-      {/* En-tête de la colonne (Sert de poignée pour glisser la colonne) */}
       <header
         {...attributes}
         {...listeners}
@@ -721,10 +705,25 @@ const BoardColumn = ({
         <span className="rounded-full border border-[#EDE0D4] bg-white px-2 py-0.5 text-[11px] font-bold text-[#7A6558]">
           {cards.length}
         </span>
-        {/* Ton dropdown existant ici... */}
+        <div onPointerDown={(e) => e.stopPropagation()}>
+          <DropdownMenu
+            trigger={
+              <span className="flex size-7 items-center justify-center rounded-md text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
+                <DotsThree size={18} weight="bold" />
+              </span>
+            }
+          >
+            <DropdownItem icon={Archive} onClick={onArchive}>
+              Archiver la liste
+            </DropdownItem>
+            <DropdownSeparator />
+            <DropdownItem icon={Trash} destructive onClick={onDelete}>
+              Supprimer la liste
+            </DropdownItem>
+          </DropdownMenu>
+        </div>
       </header>
 
-      {/* Zone des cartes */}
       <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
         <SortableContext
           items={cards.map((c) => c.id)}
@@ -740,7 +739,6 @@ const BoardColumn = ({
         </SortableContext>
       </div>
 
-      {/* Formulaire d'ajout de carte */}
       <div className="p-2">
         {addingCard ? (
           <form onSubmit={handleAddCard} className="flex flex-col gap-2">
