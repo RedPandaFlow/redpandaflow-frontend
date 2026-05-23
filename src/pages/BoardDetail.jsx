@@ -16,6 +16,7 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -49,7 +50,10 @@ import {
 import ShareBoardDialog from "../components/ShareBoardDialog";
 import ArchivedColumnsDialog from "../components/ArchivedColumnsDialog";
 import PresenceAvatars from "../components/PresenceAvatars";
-import { createHubConnection, setBoardConnectionId } from "../services/signalrClient";
+import {
+  createHubConnection,
+  setBoardConnectionId,
+} from "../services/signalrClient";
 import CardItem from "../components/CardItem";
 import { createCard, updateCardOrder } from "../services/cardService";
 
@@ -69,6 +73,8 @@ const BoardDetail = () => {
   const [archivesOpen, setArchivesOpen] = useState(false);
   const [presence, setPresence] = useState([]);
   const [members, setMembers] = useState([]);
+  const [activeDragItem, setActiveDragItem] = useState(null);
+  const originalColumnIdRef = useRef(null);
   const newColumnRef = useRef(null);
 
   const sensors = useSensors(
@@ -120,8 +126,10 @@ const BoardDetail = () => {
 
     connection.on("BoardUpdated", (payload) => {
       if (cancelled || !payload) return;
-      setBoard((prev) => (prev ? { ...prev, title: payload.title ?? prev.title } : prev));
-      setTitleDraft((prev) => (payload.title ?? prev));
+      setBoard((prev) =>
+        prev ? { ...prev, title: payload.title ?? prev.title } : prev,
+      );
+      setTitleDraft((prev) => payload.title ?? prev);
     });
 
     connection.on("BoardDeleted", () => {
@@ -147,11 +155,16 @@ const BoardDetail = () => {
         if (!prev) return prev;
         const existing = prev.columns ?? [];
         if (incoming.isArchived) {
-          return { ...prev, columns: existing.filter((c) => c.id !== incoming.id) };
+          return {
+            ...prev,
+            columns: existing.filter((c) => c.id !== incoming.id),
+          };
         }
         const found = existing.some((c) => c.id === incoming.id);
         const next = found
-          ? existing.map((c) => (c.id === incoming.id ? { ...c, ...incoming } : c))
+          ? existing.map((c) =>
+              c.id === incoming.id ? { ...c, ...incoming } : c,
+            )
           : [...existing, incoming];
         return { ...prev, columns: next };
       });
@@ -161,8 +174,11 @@ const BoardDetail = () => {
       if (cancelled || !payload?.id) return;
       setBoard((prev) =>
         prev
-          ? { ...prev, columns: (prev.columns ?? []).filter((c) => c.id !== payload.id) }
-          : prev
+          ? {
+              ...prev,
+              columns: (prev.columns ?? []).filter((c) => c.id !== payload.id),
+            }
+          : prev,
       );
     });
 
@@ -170,8 +186,11 @@ const BoardDetail = () => {
       if (cancelled || !payload?.id) return;
       setBoard((prev) =>
         prev
-          ? { ...prev, columns: (prev.columns ?? []).filter((c) => c.id !== payload.id) }
-          : prev
+          ? {
+              ...prev,
+              columns: (prev.columns ?? []).filter((c) => c.id !== payload.id),
+            }
+          : prev,
       );
     });
 
@@ -189,9 +208,14 @@ const BoardDetail = () => {
       if (cancelled || !payload?.columnId) return;
       setBoard((prev) => {
         if (!prev) return prev;
-        const ordered = [...(prev.columns ?? [])].sort((a, b) => a.order - b.order);
+        const ordered = [...(prev.columns ?? [])].sort(
+          (a, b) => a.order - b.order,
+        );
         const oldIndex = ordered.findIndex((c) => c.id === payload.columnId);
-        const newIndex = Math.max(0, Math.min(payload.newOrder ?? 0, ordered.length - 1));
+        const newIndex = Math.max(
+          0,
+          Math.min(payload.newOrder ?? 0, ordered.length - 1),
+        );
         if (oldIndex < 0 || oldIndex === newIndex) return prev;
         const moved = arrayMove(ordered, oldIndex, newIndex).map((c, idx) => ({
           ...c,
@@ -314,7 +338,72 @@ const BoardDetail = () => {
     setNewColumnTitle("");
   };
 
+  const handleDragStart = (event) => {
+    const activeData = event.active.data.current;
+    setActiveDragItem(activeData);
+
+    if (activeData?.type === "Card") {
+      originalColumnIdRef.current = activeData.card.columnId;
+    }
+  };
+
+  const handleDragOver = (event) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeType = active.data.current?.type;
+    const overType = over.data.current?.type;
+
+    if (activeType !== "Card") return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    setBoard((prev) => {
+      if (!prev) return prev;
+
+      const sourceColumn = prev.columns.find((c) =>
+        c.cards?.some((card) => card.id === activeId),
+      );
+      const destColumn =
+        overType === "Column"
+          ? prev.columns.find((c) => c.id === overId)
+          : prev.columns.find((c) =>
+              c.cards?.some((card) => card.id === overId),
+            );
+
+      if (!sourceColumn || !destColumn || sourceColumn.id === destColumn.id) {
+        return prev;
+      }
+
+      const sourceCards = [...(sourceColumn.cards || [])];
+      const destCards = [...(destColumn.cards || [])];
+
+      const activeIndex = sourceCards.findIndex((c) => c.id === activeId);
+      const overIndex =
+        overType === "Column"
+          ? destCards.length
+          : destCards.findIndex((c) => c.id === overId);
+
+      const [movedCard] = sourceCards.splice(activeIndex, 1);
+      movedCard.columnId = destColumn.id;
+
+      const newOverIndex = overIndex >= 0 ? overIndex : destCards.length;
+      destCards.splice(newOverIndex, 0, movedCard);
+
+      return {
+        ...prev,
+        columns: prev.columns.map((c) => {
+          if (c.id === sourceColumn.id) return { ...c, cards: sourceCards };
+          if (c.id === destColumn.id) return { ...c, cards: destCards };
+          return c;
+        }),
+      };
+    });
+  };
+
   const handleDragEnd = async (event) => {
+    setActiveDragItem(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -389,8 +478,7 @@ const BoardDetail = () => {
             c.id === sourceColumn.id ? { ...c, cards: movedCards } : c,
           ),
         }));
-      }
-      else {
+      } else {
         const [movedCard] = sourceCards.splice(activeIndex, 1);
         movedCard.columnId = destColumn.id;
         destCards.splice(overIndex, 0, movedCard);
@@ -410,12 +498,21 @@ const BoardDetail = () => {
       }
 
       try {
-        await updateCardOrder(workspaceId, boardId, sourceColumn.id, activeId, {
-          newColumnId: destColumn.id,
-          newOrder: overIndex >= 0 ? overIndex : 0,
-        });
+        await updateCardOrder(
+          workspaceId,
+          boardId,
+          originalColumnIdRef.current, // <--- On utilise la mémoire ici !
+          activeId,
+          {
+            newColumnId: destColumn.id,
+            newOrder: overIndex >= 0 ? overIndex : 0,
+          },
+        );
       } catch (error) {
-        alert(error.response?.data?.message || "Erreur lors du déplacement de la carte.");
+        alert(
+          error.response?.data?.message ||
+            "Erreur lors du déplacement de la carte.",
+        );
         setBoard((prev) => ({ ...prev, columns: previousColumns }));
       }
     }
@@ -552,7 +649,10 @@ const BoardDetail = () => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
+            onDragCancel={() => setActiveDragItem(null)}
           >
             <SortableContext
               items={columns.map((c) => c.id)}
@@ -579,6 +679,24 @@ const BoardDetail = () => {
                 />
               ))}
             </SortableContext>
+            <DragOverlay>
+              {activeDragItem?.type === "Card" ? (
+                <div className="scale-105 opacity-90 cursor-grabbing shadow-2xl">
+                  <CardItem card={activeDragItem.card} />
+                </div>
+              ) : activeDragItem?.type === "Column" ? (
+                <div className="rotate-1 scale-105 opacity-90 shadow-2xl">
+                  <BoardColumn
+                    column={activeDragItem.column}
+                    workspaceId={workspaceId}
+                    boardId={boardId}
+                    onArchive={() => {}}
+                    onDelete={() => {}}
+                    onCardCreated={() => {}}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
 
           {addingColumn ? (
