@@ -5,7 +5,7 @@ import { CalendarBlank, TextAlignCenter } from "@phosphor-icons/react";
 const CardItem = ({ card, onClick }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
     id: card.id,
-    data: { type: "Card", card } // Utile pour le drag & drop plus tard
+    data: { type: "Card", card }
   });
 
   const style = {
@@ -25,7 +25,6 @@ const CardItem = ({ card, onClick }) => {
     >
       <p className="text-sm font-medium text-[#1C1410]">{card.title}</p>
       
-      {/* Affiche de petits icônes si la carte a une description ou une date */}
       {(card.description || card.dueDate) && (
         <div className="flex items-center gap-3 text-xs text-[#9C8170]">
           {card.description && <TextAlignCenter size={14} />}

@@ -8,6 +8,7 @@ import {
   Archive,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
+import CardComments from "./CardComments";
 
 const EditCardDialog = ({
   isOpen,
@@ -15,6 +16,7 @@ const EditCardDialog = ({
   card,
   workspaceId,
   boardId,
+  currentBoardRole,
   onCardUpdated,
   onCardDeleted,
 }) => {
@@ -109,7 +111,7 @@ const EditCardDialog = ({
 
   return (
     <Dialog open={isOpen} onClose={onClose} title="Détails de la carte">
-      <div className="flex flex-col gap-5 mt-2">
+      <div className="flex flex-col gap-5 mt-2 overflow-y-auto max-h-[75vh] pr-2">
         <div>
           <input
             type="text"
@@ -146,7 +148,15 @@ const EditCardDialog = ({
           />
         </div>
 
-        <div className="flex justify-between items-center mt-2 pt-4 border-t border-[#EDE0D4]">
+        <CardComments 
+          workspaceId={workspaceId}
+          boardId={boardId}
+          columnId={card.columnId}
+          cardId={card.id}
+          currentBoardRole={currentBoardRole} 
+        />
+
+        <div className="flex justify-between items-center mt-2 pt-4 border-t border-[#EDE0D4] sticky bottom-0 bg-white">
           <Button
             variant="ghost"
             onClick={handleDelete}
