@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -6,7 +7,7 @@ import {
   TextAlignCenter,
   Trash,
   Archive,
-  ClockClockwise,
+  ChatCircleText,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
 import { getCardActivities } from "../services/activityService";
@@ -94,9 +95,9 @@ const EditCardDialog = ({
         payload,
       );
       onCardUpdated(card.columnId, updatedCard);
-      onClose();
+      toast.success("Carte enregistrée.");
     } catch (error) {
-      alert("Erreur lors de la mise à jour.");
+      toast.error("Erreur lors de la mise à jour.");
     } finally {
       setIsSaving(false);
     }
@@ -148,55 +149,57 @@ const EditCardDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} title="Détails de la carte">
-      <div className="flex flex-col gap-5 mt-2">
-        <div>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-transparent text-xl font-bold focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1 -ml-2 text-[#1C1410]"
-            placeholder="Titre de la carte..."
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-            <TextAlignCenter size={18} />
-            <h3>Description</h3>
+    <Dialog open={isOpen} onClose={onClose} title="Détails de la carte" size="xl">
+      <div className="mt-2 flex flex-col gap-5 md:flex-row md:gap-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <div>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-transparent text-xl font-bold focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1 -ml-2 text-[#1C1410]"
+              placeholder="Titre de la carte..."
+            />
           </div>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ajouter une description plus détaillée..."
-            className="min-h-[120px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
-          />
-        </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-            <CalendarBlank size={18} />
-            <h3>Date d'échéance</h3>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+              <TextAlignCenter size={18} />
+              <h3>Description</h3>
+            </div>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ajouter une description plus détaillée..."
+              className="min-h-[120px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
+            />
           </div>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
-          />
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+              <CalendarBlank size={18} />
+              <h3>Date d'échéance</h3>
+            </div>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
+            />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <aside className="flex w-full flex-col gap-3 border-[#EDE0D4] md:w-80 md:shrink-0 md:border-l md:pl-6">
           <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-            <ClockClockwise size={18} />
-            <h3>Activité</h3>
+            <ChatCircleText size={18} />
+            <h3>Commentaires et activité</h3>
           </div>
           {activities === null ? (
             <p className="text-xs text-[#9C8170]">Chargement…</p>
           ) : activities.length === 0 ? (
             <p className="text-xs text-[#9C8170]">Aucune activité pour le moment.</p>
           ) : (
-            <ul className="flex max-h-48 flex-col gap-3 overflow-y-auto pr-1">
+            <ul className="flex max-h-[28rem] flex-col gap-3 overflow-y-auto pr-1">
               {activities.map((a) => (
                 <li key={a.id} className="flex items-start gap-3">
                   <UserAvatar name={a.username} src={a.userAvatarUrl} size={28} />
@@ -210,9 +213,10 @@ const EditCardDialog = ({
               ))}
             </ul>
           )}
-        </div>
+        </aside>
+      </div>
 
-        <div className="flex justify-between items-center mt-2 pt-4 border-t border-[#EDE0D4]">
+      <div className="mt-6 flex justify-between items-center pt-4 border-t border-[#EDE0D4]">
           <Button
             variant="ghost"
             onClick={handleDelete}
@@ -248,7 +252,6 @@ const EditCardDialog = ({
               {isSaving ? "..." : "Enregistrer"}
             </Button>
           </div>
-        </div>
       </div>
     </Dialog>
   );
