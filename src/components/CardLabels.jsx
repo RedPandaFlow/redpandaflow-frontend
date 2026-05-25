@@ -62,19 +62,17 @@ const CardLabels = ({
 
   const loadData = async () => {
     setIsLoading(true);
-    try {
-      const [boardLbls, cardLbls] = await Promise.all([
-        getBoardLabels(workspaceId, boardId),
-        getCardLabels(workspaceId, boardId, columnId, cardId),
-      ]);
+    const result = await Promise.all([
+      getBoardLabels(workspaceId, boardId),
+      getCardLabels(workspaceId, boardId, columnId, cardId),
+    ]).catch(() => null);
+    if (result) {
+      const [boardLbls, cardLbls] = result;
       setBoardLabels(boardLbls);
       setCardLabels(cardLbls);
       if (onLabelsChanged) onLabelsChanged(cardLbls);
-    } catch (error) {
-      console.error("Erreur labels:", error);
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const toggleLabel = async (labelId) => {
@@ -108,8 +106,7 @@ const CardLabels = ({
       if (onLabelsChanged) {
         onLabelsChanged(newLabels);
       }
-    } catch (error) {
-      console.error("Erreur toggle label", error);
+    } catch {
       alert("Erreur lors de l'assignation de l'étiquette.");
     }
   };
@@ -139,13 +136,9 @@ const CardLabels = ({
       )
     )
       return;
-    try {
-      await deleteBoardLabel(workspaceId, boardId, labelId);
-      setBoardLabels(boardLabels.filter((l) => l.id !== labelId));
-      setCardLabels(cardLabels.filter((l) => l.id !== labelId));
-    } catch (error) {
-      console.error("Erreur suppression", error);
-    }
+    await deleteBoardLabel(workspaceId, boardId, labelId).catch(() => null);
+    setBoardLabels(boardLabels.filter((l) => l.id !== labelId));
+    setCardLabels(cardLabels.filter((l) => l.id !== labelId));
   };
 
   return (

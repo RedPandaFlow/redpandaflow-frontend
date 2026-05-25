@@ -274,13 +274,9 @@ const BoardDetail = () => {
     connection.onreconnected(async () => {
       if (cancelled) return;
       setBoardConnectionId(connection.connectionId);
-      try {
-        await connection.invoke("JoinBoard", boardId);
-        const fresh = await getBoard(workspaceId, boardId);
-        if (!cancelled) setBoard(fresh);
-      } catch (err) {
-        console.error("Reconnect rejoin failed", err);
-      }
+      await connection.invoke("JoinBoard", boardId).catch(() => null);
+      const fresh = await getBoard(workspaceId, boardId).catch(() => null);
+      if (!cancelled && fresh) setBoard(fresh);
     });
 
     connection.onreconnecting(() => {
@@ -288,17 +284,14 @@ const BoardDetail = () => {
     });
 
     (async () => {
-      try {
-        await connection.start();
-        if (cancelled) {
-          await connection.stop();
-          return;
-        }
-        setBoardConnectionId(connection.connectionId);
-        await connection.invoke("JoinBoard", boardId);
-      } catch (err) {
-        if (!cancelled) console.error("Presence connection failed", err);
+      const started = await connection.start().then(() => true).catch(() => false);
+      if (!started) return;
+      if (cancelled) {
+        await connection.stop().catch(() => null);
+        return;
       }
+      setBoardConnectionId(connection.connectionId);
+      await connection.invoke("JoinBoard", boardId).catch(() => null);
     })();
 
     return () => {
