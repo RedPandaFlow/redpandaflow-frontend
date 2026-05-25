@@ -18,3 +18,7 @@ export const me = async () => {
 export const logout = async () => {
     await api.post('/auth/logout').catch(() => undefined);
 };
+
+export const deleteAccount = async () => {
+    await api.delete('/auth/account');
+};
