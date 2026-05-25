@@ -35,6 +35,7 @@ import {
   updateBoard,
   deleteBoard,
   createColumn,
+  updateColumn,
   deleteColumn,
   archiveColumn,
   updateColumnOrder,
@@ -731,6 +732,14 @@ const BoardDetail = () => {
                   onArchive={() => handleArchiveColumn(column.id)}
                   onDelete={() => handleDeleteColumn(column.id)}
                   onCardClick={openCardDetail}
+                  onRenamed={(updated) => {
+                    setBoard((prev) => ({
+                      ...prev,
+                      columns: prev.columns.map((c) =>
+                        c.id === updated.id ? { ...c, title: updated.title } : c,
+                      ),
+                    }));
+                  }}
                   onCardCreated={(columnId, newCard) => {
                     setBoard((prev) => ({
                       ...prev,
@@ -880,13 +889,34 @@ const BoardColumn = ({
   boardId,
   onArchive,
   onDelete,
+  onRenamed,
   onCardCreated,
   onCardClick,
 }) => {
   const [addingCard, setAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(column.title);
   const newCardRef = useRef(null);
+
+  const commitTitle = async () => {
+    const trimmed = titleDraft.trim();
+    setEditingTitle(false);
+    if (!trimmed || trimmed === column.title) {
+      setTitleDraft(column.title);
+      return;
+    }
+    try {
+      const updated = await updateColumn(workspaceId, boardId, column.id, {
+        title: trimmed,
+      });
+      onRenamed?.(updated);
+    } catch (error) {
+      alert(error.response?.data?.message || "Renommage impossible.");
+      setTitleDraft(column.title);
+    }
+  };
 
   const {
     attributes,
@@ -939,13 +969,38 @@ const BoardColumn = ({
       className="flex w-72 shrink-0 flex-col rounded-xl border border-[#EDE0D4] bg-[#FDFAF6] shadow-sm"
     >
       <header
-        {...attributes}
-        {...listeners}
-        className="flex items-center gap-2 px-3 py-2.5 cursor-grab active:cursor-grabbing"
+        {...(editingTitle ? {} : attributes)}
+        {...(editingTitle ? {} : listeners)}
+        className={`flex items-center gap-2 px-3 py-2.5 ${editingTitle ? "" : "cursor-grab active:cursor-grabbing"}`}
       >
-        <h3 className="flex-1 truncate text-sm font-bold text-[#1C1410]">
-          {column.title}
-        </h3>
+        {editingTitle ? (
+          <Input
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onBlur={commitTitle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitTitle();
+              if (e.key === "Escape") {
+                setTitleDraft(column.title);
+                setEditingTitle(false);
+              }
+            }}
+            autoFocus
+            maxLength={25}
+            className="h-7 flex-1 border-[#EDE0D4] bg-white text-sm font-bold text-[#1C1410] focus-visible:ring-orange-500"
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <h3
+            onDoubleClick={() => {
+              setTitleDraft(column.title);
+              setEditingTitle(true);
+            }}
+            className="flex-1 truncate text-sm font-bold text-[#1C1410]"
+          >
+            {column.title}
+          </h3>
+        )}
         <span className="rounded-full border border-[#EDE0D4] bg-white px-2 py-0.5 text-[11px] font-bold text-[#7A6558]">
           {cards.length}
         </span>
@@ -957,6 +1012,15 @@ const BoardColumn = ({
               </span>
             }
           >
+            <DropdownItem
+              icon={PencilSimple}
+              onClick={() => {
+                setTitleDraft(column.title);
+                setEditingTitle(true);
+              }}
+            >
+              Renommer la liste
+            </DropdownItem>
             <DropdownItem icon={Archive} onClick={onArchive}>
               Archiver la liste
             </DropdownItem>

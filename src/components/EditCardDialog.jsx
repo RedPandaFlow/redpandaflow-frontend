@@ -52,7 +52,7 @@ const EditCardDialog = ({
   const [dueDate, setDueDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [activities, setActivities] = useState(null);
-  const [showLabels, setShowLabels] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
   const [showDate, setShowDate] = useState(false);
 
   useEffect(() => {
