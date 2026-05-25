@@ -1,13 +1,13 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  Archive,
-  DotsThree,
-  Plus,
-  PencilSimple,
-  Trash,
-  UserPlus,
-  X,
+  ArchiveIcon,
+  DotsThreeIcon,
+  PlusIcon,
+  PencilSimpleIcon,
+  TrashIcon,
+  UserPlusIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import {
   DndContext,
@@ -285,7 +285,10 @@ const BoardDetail = () => {
     });
 
     (async () => {
-      const started = await connection.start().then(() => true).catch(() => false);
+      const started = await connection
+        .start()
+        .then(() => true)
+        .catch(() => false);
       if (!started) return;
       if (cancelled) {
         await connection.stop().catch(() => null);
@@ -677,27 +680,30 @@ const BoardDetail = () => {
             onClick={() => setShareOpen(true)}
             className="bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
           >
-            <UserPlus size={16} />
+            <UserPlusIcon size={16} />
             Partager
           </Button>
           <DropdownMenu
             trigger={
               <span className="flex size-9 items-center justify-center rounded-lg border border-[#EDE0D4] bg-white text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
-                <DotsThree size={20} weight="bold" />
+                <DotsThreeIcon size={20} weight="bold" />
               </span>
             }
           >
             <DropdownItem
-              icon={PencilSimple}
+              icon={PencilSimpleIcon}
               onClick={() => setEditingTitle(true)}
             >
               Renommer
             </DropdownItem>
-            <DropdownItem icon={Archive} onClick={() => setIsArchiveOpen(true)}>
+            <DropdownItem
+              icon={ArchiveIcon}
+              onClick={() => setIsArchiveOpen(true)}
+            >
               Voir les archives
             </DropdownItem>
             <DropdownSeparator />
-            <DropdownItem icon={Trash} destructive onClick={handleDelete}>
+            <DropdownItem icon={TrashIcon} destructive onClick={handleDelete}>
               Supprimer le tableau
             </DropdownItem>
           </DropdownMenu>
@@ -738,7 +744,9 @@ const BoardDetail = () => {
                     setBoard((prev) => ({
                       ...prev,
                       columns: prev.columns.map((c) =>
-                        c.id === updated.id ? { ...c, title: updated.title } : c,
+                        c.id === updated.id
+                          ? { ...c, title: updated.title }
+                          : c,
                       ),
                     }));
                   }}
@@ -806,7 +814,7 @@ const BoardDetail = () => {
                   aria-label="Annuler"
                   className="rounded-lg p-1.5 text-[#9C8170] hover:bg-orange-50 hover:text-[#EA580C]"
                 >
-                  <X size={20} />
+                  <XIcon size={20} />
                 </button>
               </div>
             </form>
@@ -816,7 +824,7 @@ const BoardDetail = () => {
               onClick={() => setAddingColumn(true)}
               className="flex w-72 shrink-0 items-center gap-2 rounded-xl border border-dashed border-[#EDE0D4] bg-white/60 px-3 py-2.5 text-sm font-semibold text-[#7A6558] transition-colors hover:bg-white hover:text-[#EA580C]"
             >
-              <Plus size={16} />
+              <PlusIcon size={16} />
               {columns.length === 0
                 ? "Ajouter une liste"
                 : "Ajouter une autre liste"}
@@ -1010,12 +1018,12 @@ const BoardColumn = ({
           <DropdownMenu
             trigger={
               <span className="flex size-7 items-center justify-center rounded-md text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
-                <DotsThree size={18} weight="bold" />
+                <DotsThreeIcon size={18} weight="bold" />
               </span>
             }
           >
             <DropdownItem
-              icon={PencilSimple}
+              icon={PencilSimpleIcon}
               onClick={() => {
                 setTitleDraft(column.title);
                 setEditingTitle(true);
@@ -1023,11 +1031,11 @@ const BoardColumn = ({
             >
               Renommer la liste
             </DropdownItem>
-            <DropdownItem icon={Archive} onClick={onArchive}>
+            <DropdownItem icon={ArchiveIcon} onClick={onArchive}>
               Archiver la liste
             </DropdownItem>
             <DropdownSeparator />
-            <DropdownItem icon={Trash} destructive onClick={onDelete}>
+            <DropdownItem icon={TrashIcon} destructive onClick={onDelete}>
               Supprimer la liste
             </DropdownItem>
           </DropdownMenu>
@@ -1080,7 +1088,7 @@ const BoardColumn = ({
                 onClick={() => setAddingCard(false)}
                 className="rounded p-1 text-[#9C8170] hover:bg-orange-50 hover:text-[#1C1410]"
               >
-                <X size={16} />
+                <XIcon size={16} />
               </button>
             </div>
           </form>
@@ -1090,7 +1098,7 @@ const BoardColumn = ({
             onClick={() => setAddingCard(true)}
             className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
           >
-            <Plus size={16} />
+            <PlusIcon size={16} />
             Ajouter une carte
           </button>
         )}

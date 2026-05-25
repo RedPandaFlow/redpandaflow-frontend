@@ -25,10 +25,10 @@ const Terms = () => {
         <section className="space-y-3 text-[#1C1410]">
           <h2 className="text-lg font-bold">1. Objet</h2>
           <p className="text-sm text-[#3F2A1F] leading-relaxed">
-            Les présentes conditions régissent l'utilisation de RedPandaFlow,
-            un service de gestion collaborative de tâches sous forme de
-            tableaux. RedPandaFlow est un projet pédagogique réalisé dans le
-            cadre d'une formation YNOV (B2) et fourni sans garantie.
+            Les présentes conditions régissent l'utilisation de RedPandaFlow, un
+            service de gestion collaborative de tâches sous forme de tableaux.
+            RedPandaFlow est un projet pédagogique réalisé dans le cadre d'une
+            formation YNOV (B2) et fourni sans garantie.
           </p>
         </section>
 
@@ -43,16 +43,16 @@ const Terms = () => {
             >
               politique de confidentialité
             </Link>
-            . Si vous n'êtes pas d'accord avec ces conditions, n'utilisez pas
-            le service.
+            . Si vous n'êtes pas d'accord avec ces conditions, n'utilisez pas le
+            service.
           </p>
         </section>
 
         <section className="space-y-3 text-[#1C1410] mt-8">
           <h2 className="text-lg font-bold">3. Compte utilisateur</h2>
           <p className="text-sm text-[#3F2A1F] leading-relaxed">
-            Vous êtes responsable de la confidentialité de votre mot de passe
-            et de toutes les actions effectuées depuis votre compte. Vous vous
+            Vous êtes responsable de la confidentialité de votre mot de passe et
+            de toutes les actions effectuées depuis votre compte. Vous vous
             engagez à fournir des informations exactes lors de l'inscription.
             Vous pouvez supprimer votre compte à tout moment depuis la page
             Profil.
@@ -66,10 +66,22 @@ const Terms = () => {
             pas&nbsp;:
           </p>
           <ul className="list-disc pl-5 text-sm text-[#3F2A1F] leading-relaxed space-y-1">
-            <li>publier de contenus illégaux, haineux, diffamatoires ou portant atteinte aux droits d'autrui&nbsp;;</li>
-            <li>tenter de contourner les mécanismes d'authentification ou d'autorisation&nbsp;;</li>
-            <li>perturber le fonctionnement du service ou des autres utilisateurs&nbsp;;</li>
-            <li>collecter automatiquement des données depuis le service sans autorisation préalable.</li>
+            <li>
+              publier de contenus illégaux, haineux, diffamatoires ou portant
+              atteinte aux droits d'autrui&nbsp;;
+            </li>
+            <li>
+              tenter de contourner les mécanismes d'authentification ou
+              d'autorisation&nbsp;;
+            </li>
+            <li>
+              perturber le fonctionnement du service ou des autres
+              utilisateurs&nbsp;;
+            </li>
+            <li>
+              collecter automatiquement des données depuis le service sans
+              autorisation préalable.
+            </li>
           </ul>
         </section>
 
@@ -86,8 +98,8 @@ const Terms = () => {
           <h2 className="text-lg font-bold">6. Responsabilité</h2>
           <p className="text-sm text-[#3F2A1F] leading-relaxed">
             S'agissant d'un projet pédagogique, le service est fourni «&nbsp;en
-            l'état&nbsp;» sans garantie de disponibilité, d'absence d'erreurs
-            ni de conservation des données. Vous êtes invité à exporter
+            l'état&nbsp;» sans garantie de disponibilité, d'absence d'erreurs ni
+            de conservation des données. Vous êtes invité à exporter
             régulièrement vos contenus importants.
           </p>
         </section>

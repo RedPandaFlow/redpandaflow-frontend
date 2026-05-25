@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MagnifyingGlass, Kanban, UsersThree, Note, Spinner } from "@phosphor-icons/react";
+import {
+  MagnifyingGlassIcon,
+  KanbanIcon,
+  UsersThreeIcon,
+  NoteIcon,
+  SpinnerIcon,
+} from "@phosphor-icons/react";
 import { search } from "../services/searchService";
 
 const EMPTY_RESULTS = { workspaces: [], boards: [], cards: [] };
@@ -52,7 +58,10 @@ const SearchBar = () => {
 
   useEffect(() => {
     const handleClick = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
         setOpen(false);
       }
     };
@@ -70,7 +79,9 @@ const SearchBar = () => {
     if (entry.type === "workspace") {
       navigate(`/workspace/${entry.item.id}`);
     } else if (entry.type === "card") {
-      navigate(`/workspace/${entry.item.workspaceId}/board/${entry.item.boardId}?card=${entry.item.id}`);
+      navigate(
+        `/workspace/${entry.item.workspaceId}/board/${entry.item.boardId}?card=${entry.item.id}`,
+      );
     } else {
       navigate(`/workspace/${entry.item.workspaceId}/board/${entry.item.id}`);
     }
@@ -83,11 +94,15 @@ const SearchBar = () => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setOpen(true);
-      setActiveIndex((idx) => (flatItems.length === 0 ? -1 : (idx + 1) % flatItems.length));
+      setActiveIndex((idx) =>
+        flatItems.length === 0 ? -1 : (idx + 1) % flatItems.length,
+      );
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActiveIndex((idx) =>
-        flatItems.length === 0 ? -1 : (idx - 1 + flatItems.length) % flatItems.length
+        flatItems.length === 0
+          ? -1
+          : (idx - 1 + flatItems.length) % flatItems.length,
       );
     } else if (event.key === "Enter") {
       if (activeIndex >= 0 && flatItems[activeIndex]) {
@@ -106,7 +121,7 @@ const SearchBar = () => {
   return (
     <div ref={containerRef} className="relative w-full max-w-xl">
       <div className="relative">
-        <MagnifyingGlass
+        <MagnifyingGlassIcon
           size={16}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8B7A] pointer-events-none"
         />
@@ -132,7 +147,7 @@ const SearchBar = () => {
           className="w-full rounded-lg border border-[#EDE0D4] bg-white/70 py-2 pl-9 pr-3 text-sm text-[#3E2C1C] placeholder:text-[#9C8B7A] outline-none transition-colors focus:border-[#EA580C] focus:bg-white"
         />
         {loading && (
-          <Spinner
+          <SpinnerIcon
             size={16}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8B7A] animate-spin"
           />
@@ -140,7 +155,7 @@ const SearchBar = () => {
       </div>
 
       {showPopover && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-[28rem] overflow-y-auto rounded-lg border border-[#EDE0D4] bg-white shadow-lg">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-112 overflow-y-auto rounded-lg border border-[#EDE0D4] bg-white shadow-lg">
           {!hasResults && !loading && (
             <div className="px-4 py-6 text-center text-sm text-[#9C8B7A]">
               Aucun résultat pour « {trimmed} »
@@ -151,12 +166,14 @@ const SearchBar = () => {
             <SearchSection title="Espaces de travail">
               {results.workspaces.map((workspace) => {
                 const flatIdx = flatItems.findIndex(
-                  (entry) => entry.type === "workspace" && entry.item.id === workspace.id
+                  (entry) =>
+                    entry.type === "workspace" &&
+                    entry.item.id === workspace.id,
                 );
                 return (
                   <SearchItem
                     key={`workspace-${workspace.id}`}
-                    icon={UsersThree}
+                    icon={UsersThreeIcon}
                     title={workspace.name}
                     subtitle={workspace.description ?? "Espace de travail"}
                     active={flatIdx === activeIndex}
@@ -172,12 +189,13 @@ const SearchBar = () => {
             <SearchSection title="Tableaux">
               {results.boards.map((board) => {
                 const flatIdx = flatItems.findIndex(
-                  (entry) => entry.type === "board" && entry.item.id === board.id
+                  (entry) =>
+                    entry.type === "board" && entry.item.id === board.id,
                 );
                 return (
                   <SearchItem
                     key={`board-${board.id}`}
-                    icon={Kanban}
+                    icon={KanbanIcon}
                     title={board.title}
                     subtitle={board.workspaceName}
                     active={flatIdx === activeIndex}
@@ -193,12 +211,12 @@ const SearchBar = () => {
             <SearchSection title="Cartes">
               {results.cards.map((card) => {
                 const flatIdx = flatItems.findIndex(
-                  (entry) => entry.type === "card" && entry.item.id === card.id
+                  (entry) => entry.type === "card" && entry.item.id === card.id,
                 );
                 return (
                   <SearchItem
                     key={`card-${card.id}`}
-                    icon={Note}
+                    icon={NoteIcon}
                     title={card.title}
                     subtitle={`${card.boardTitle} · ${card.workspaceName}`}
                     active={flatIdx === activeIndex}
@@ -224,7 +242,14 @@ const SearchSection = ({ title, children }) => (
   </div>
 );
 
-const SearchItem = ({ icon: Icon, title, subtitle, active, onClick, onMouseEnter }) => (
+const SearchItem = ({
+  icon: Icon,
+  title,
+  subtitle,
+  active,
+  onClick,
+  onMouseEnter,
+}) => (
   <li>
     <button
       type="button"
@@ -238,8 +263,12 @@ const SearchItem = ({ icon: Icon, title, subtitle, active, onClick, onMouseEnter
         <Icon size={16} weight="bold" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-[#3E2C1C]">{title}</span>
-        <span className="block truncate text-xs text-[#9C8B7A]">{subtitle}</span>
+        <span className="block truncate text-sm font-medium text-[#3E2C1C]">
+          {title}
+        </span>
+        <span className="block truncate text-xs text-[#9C8B7A]">
+          {subtitle}
+        </span>
       </span>
     </button>
   </li>

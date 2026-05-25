@@ -1,6 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TextAlignLeft, CalendarBlank, CheckSquare } from "@phosphor-icons/react";
+import {
+  TextAlignLeftIcon,
+  CalendarBlankIcon,
+  CheckSquareIcon,
+} from "@phosphor-icons/react";
 
 export default function CardItem({ card, onClick }) {
   const {
@@ -28,7 +32,7 @@ export default function CardItem({ card, onClick }) {
       <div
         ref={setNodeRef}
         style={style}
-        className="opacity-50 bg-[#E6D5C3] border-2 border-dashed border-[#EA580C] rounded-lg p-3 min-h-[60px]"
+        className="opacity-50 bg-[#E6D5C3] border-2 border-dashed border-[#EA580C] rounded-lg p-3 min-h-15"
       />
     );
   }
@@ -46,7 +50,7 @@ export default function CardItem({ card, onClick }) {
           {card.labels.map((label) => (
             <div
               key={label.id}
-              className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-xs max-w-[120px] truncate"
+              className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-xs max-w-30 truncate"
               style={{ backgroundColor: label.color }}
               title={label.name}
             >
@@ -60,10 +64,10 @@ export default function CardItem({ card, onClick }) {
 
       {(card.description || card.dueDate || card.checklistItemsTotal > 0) && (
         <div className="mt-2 flex items-center gap-2 text-xs text-[#9C8170]">
-          {card.description && <TextAlignLeft size={14} />}
+          {card.description && <TextAlignLeftIcon size={14} />}
           {card.dueDate && (
             <span className="flex items-center gap-1">
-              <CalendarBlank size={14} />
+              <CalendarBlankIcon size={14} />
               {new Date(card.dueDate).toLocaleDateString()}
             </span>
           )}
@@ -75,7 +79,7 @@ export default function CardItem({ card, onClick }) {
                   : "bg-[#FDF3EA] text-[#7A6558]"
               }`}
             >
-              <CheckSquare size={12} weight="bold" />
+              <CheckSquareIcon size={12} weight="bold" />
               {card.checklistItemsDone}/{card.checklistItemsTotal}
             </span>
           )}

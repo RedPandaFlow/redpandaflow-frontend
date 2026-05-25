@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import { gradientFor } from "../lib/gradient";
 import { UserAvatar } from "./UserAvatar";
 
@@ -11,14 +11,16 @@ const MemberPopover = ({ user, isSelf, onClose }) => {
       role="dialog"
       className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-[#EDE0D4] bg-white shadow-xl"
     >
-      <div className={`relative bg-linear-to-br ${gradientFor(user.username)} px-4 pt-4 pb-4`}>
+      <div
+        className={`relative bg-linear-to-br ${gradientFor(user.username)} px-4 pt-4 pb-4`}
+      >
         <button
           type="button"
           onClick={onClose}
           aria-label="Fermer"
           className="absolute right-2 top-2 rounded-md p-1 text-white/90 transition-colors hover:bg-black/15"
         >
-          <X size={16} weight="bold" />
+          <XIcon size={16} weight="bold" />
         </button>
 
         <div className="flex items-center gap-3">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Tag, Plus, Check, Trash } from "@phosphor-icons/react";
+import { TagIcon, PlusIcon, CheckIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   getBoardLabels,
@@ -11,21 +11,21 @@ import {
 } from "../services/labelService";
 
 const PREDEFINED_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#eab308",
-  "#84cc16",
-  "#22c55e",
-  "#10b981",
-  "#14b8a6",
-  "#06b6d4",
-  "#0ea5e9",
-  "#3b82f6",
-  "#6366f1",
-  "#8b5cf6",
-  "#a855f7",
-  "#ec4899",
+  "#F06464",
+  "#FA8B4B",
+  "#F5B142",
+  "#DBC13B",
+  "#A2CC47",
+  "#47C26D",
+  "#2DBF97",
+  "#2EBCB1",
+  "#2EBBD6",
+  "#42AEE8",
+  "#5D8CEB",
+  "#7B7CEB",
+  "#A075E6",
+  "#C466E8",
+  "#F06AA6",
 ];
 
 const CardLabels = ({
@@ -102,7 +102,7 @@ const CardLabels = ({
       }
 
       setCardLabels(newLabels);
-      
+
       if (onLabelsChanged) {
         onLabelsChanged(newLabels);
       }
@@ -144,7 +144,7 @@ const CardLabels = ({
   return (
     <div className="flex flex-col gap-2 mt-4 relative" ref={dropdownRef}>
       <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-        <Tag size={18} />
+        <TagIcon size={18} />
         <h3>Étiquettes</h3>
       </div>
 
@@ -168,7 +168,7 @@ const CardLabels = ({
           onClick={() => setIsOpen(!isOpen)}
           className="h-7 w-7 rounded bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"
         >
-          <Plus size={16} />
+          <PlusIcon size={16} />
         </button>
       </div>
 
@@ -196,14 +196,14 @@ const CardLabels = ({
                       style={{ backgroundColor: label.color }}
                     >
                       <span>{label.name}</span>
-                      {isSelected && <Check size={14} weight="bold" />}
+                      {isSelected && <CheckIcon size={14} weight="bold" />}
                     </div>
                     {isAdmin && (
                       <button
                         onClick={(e) => handleDeleteBoardLabel(label.id, e)}
                         className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
                       >
-                        <Trash size={16} />
+                        <TrashIcon size={16} />
                       </button>
                     )}
                   </div>
@@ -239,7 +239,7 @@ const CardLabels = ({
                     style={{ backgroundColor: color }}
                   >
                     {newLabelColor === color && (
-                      <Check size={12} weight="bold" color="white" />
+                      <CheckIcon size={12} weight="bold" color="white" />
                     )}
                   </button>
                 ))}

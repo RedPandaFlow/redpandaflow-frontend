@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { SignOut, Link as LinkIcon } from "@phosphor-icons/react";
+import { SignOutIcon, LinkIcon } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import {
   getBoardMembers,
@@ -66,7 +66,7 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
       } catch (err) {
         if (active) {
           setError(
-            err.response?.data?.message || "Impossible de charger les membres."
+            err.response?.data?.message || "Impossible de charger les membres.",
           );
         }
       } finally {
@@ -114,10 +114,10 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
         workspaceId,
         boardId,
         memberUserId,
-        role
+        role,
       );
       setBoardMembers((prev) =>
-        prev.map((m) => (m.userId === memberUserId ? updated : m))
+        prev.map((m) => (m.userId === memberUserId ? updated : m)),
       );
     } catch (err) {
       setError(err.response?.data?.message || "Changement de rôle impossible.");
@@ -254,16 +254,16 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
                 const canRemove = !m.isOwner && (isAdmin || isSelf);
                 const canChangeRole = isAdmin && !m.isOwner && !isSelf;
                 return (
-                  <li
-                    key={m.userId}
-                    className="flex items-center gap-3 py-2.5"
-                  >
+                  <li key={m.userId} className="flex items-center gap-3 py-2.5">
                     <UserAvatar name={m.username} src={m.avatarUrl} size={36} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-[#1C1410]">
                         {m.username}
                         {isSelf && (
-                          <span className="font-normal text-[#9C8170]"> (vous)</span>
+                          <span className="font-normal text-[#9C8170]">
+                            {" "}
+                            (vous)
+                          </span>
                         )}
                       </p>
                       <p className="truncate text-xs text-[#9C8170]">
@@ -302,7 +302,7 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
                           disabled={busy}
                           className="h-9 px-3 text-red-600 hover:bg-red-50 hover:text-red-700"
                         >
-                          <SignOut size={15} />
+                          <SignOutIcon size={15} />
                           {isSelf ? "Quitter" : "Retirer"}
                         </Button>
                       )}

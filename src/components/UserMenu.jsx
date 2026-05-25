@@ -1,6 +1,11 @@
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChartLine, Gear, SignOut, UserCircle } from "@phosphor-icons/react";
+import {
+  ChartLineIcon,
+  GearIcon,
+  SignOutIcon,
+  UserCircleIcon,
+} from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { UserAvatar } from "./UserAvatar";
 import {
@@ -35,25 +40,27 @@ const UserMenu = () => {
       <div className="flex items-center gap-3 px-4 py-3">
         <UserAvatar name={username} src={avatarUrl} size={40} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-[#1C1410]">{username}</p>
+          <p className="truncate text-sm font-bold text-[#1C1410]">
+            {username}
+          </p>
           <p className="truncate text-xs text-[#9C8170]">{email}</p>
         </div>
       </div>
 
       <DropdownSeparator />
       <DropdownLabel>Compte</DropdownLabel>
-      <DropdownItem icon={UserCircle} onClick={() => navigate("/profile")}>
+      <DropdownItem icon={UserCircleIcon} onClick={() => navigate("/profile")}>
         Profil
       </DropdownItem>
-      <DropdownItem icon={ChartLine} disabled hint="Bientôt">
+      <DropdownItem icon={ChartLineIcon} disabled hint="Bientôt">
         Activité
       </DropdownItem>
-      <DropdownItem icon={Gear} disabled hint="Bientôt">
+      <DropdownItem icon={GearIcon} disabled hint="Bientôt">
         Paramètres
       </DropdownItem>
 
       <DropdownSeparator />
-      <DropdownItem icon={SignOut} destructive onClick={handleLogout}>
+      <DropdownItem icon={SignOutIcon} destructive onClick={handleLogout}>
         Se déconnecter
       </DropdownItem>
     </DropdownMenu>

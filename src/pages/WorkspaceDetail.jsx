@@ -1,6 +1,11 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CaretDown, SignOut, UserPlus } from "@phosphor-icons/react";
+import {
+  ArrowLeftIcon,
+  CaretDownIcon,
+  SignOutIcon,
+  UserPlusIcon,
+} from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { userWorkspacePath } from "../lib/routes";
 import { gradientFor } from "../lib/gradient";
@@ -23,7 +28,11 @@ import { UserAvatar } from "../components/UserAvatar";
 import CreateBoardDialog from "../components/CreateBoardDialog";
 
 const ROLES = ["Admin", "Member", "Viewer"];
-const roleLabels = { Admin: "Administrateur", Member: "Membre", Viewer: "Lecteur" };
+const roleLabels = {
+  Admin: "Administrateur",
+  Member: "Membre",
+  Viewer: "Lecteur",
+};
 
 const selectClass =
   "h-9 rounded-md border border-[#EDE0D4] bg-[#FFF8F2] px-2 text-sm text-[#1C1410] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500";
@@ -51,10 +60,7 @@ const WorkspaceDetail = () => {
 
   const load = async () => {
     try {
-      const [ws, brds] = await Promise.all([
-        getWorkspace(id),
-        getBoards(id),
-      ]);
+      const [ws, brds] = await Promise.all([getWorkspace(id), getBoards(id)]);
       const mbrs = ws.currentUserRole != null ? await getMembers(id) : [];
       setWorkspace({ ...ws, boards: brds });
       setMembers(mbrs);
@@ -97,10 +103,10 @@ const WorkspaceDetail = () => {
 
   const workspaceMembers = members.filter((m) => m.role != null);
   const singleBoardGuests = members.filter(
-    (m) => m.role == null && (m.boardIds?.length ?? 0) === 1
+    (m) => m.role == null && (m.boardIds?.length ?? 0) === 1,
   );
   const multiBoardGuests = members.filter(
-    (m) => m.role == null && (m.boardIds?.length ?? 0) >= 2
+    (m) => m.role == null && (m.boardIds?.length ?? 0) >= 2,
   );
 
   const handleUpdate = async (e) => {
@@ -211,14 +217,14 @@ const WorkspaceDetail = () => {
         onClick={() => navigate(userWorkspacePath(user))}
         className="mb-6 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-[#9C8170] hover:text-[#EA580C]"
       >
-        <ArrowLeft size={14} weight="bold" />
+        <ArrowLeftIcon size={14} weight="bold" />
         Espaces de travail
       </button>
 
       <div className="mb-6 flex items-center gap-4">
         <div
           className={`flex size-14 shrink-0 items-center justify-center rounded-xl bg-linear-to-br text-xl font-bold text-white ${gradientFor(
-            workspace.name
+            workspace.name,
           )}`}
         >
           {initial}
@@ -230,9 +236,7 @@ const WorkspaceDetail = () => {
           <p className="truncate text-sm text-[#9C8170]">
             {workspace.description || "Pas de description"}
             {!isGuest && (
-              <>
-                {" "}· Votre rôle : {roleLabels[workspace.currentUserRole]}
-              </>
+              <> · Votre rôle : {roleLabels[workspace.currentUserRole]}</>
             )}
             {isGuest && " · Invité au tableau"}
           </p>
@@ -274,7 +278,9 @@ const WorkspaceDetail = () => {
                 onClick={() => navigate(`/workspace/${id}/board/${board.id}`)}
                 className="overflow-hidden rounded-lg border border-[#EDE0D4] bg-white text-left transition-colors hover:border-orange-200"
               >
-                <div className={`h-20 bg-linear-to-br ${gradientFor(board.title)}`} />
+                <div
+                  className={`h-20 bg-linear-to-br ${gradientFor(board.title)}`}
+                />
                 <div className="px-3 py-2.5">
                   <span className="block truncate text-sm font-semibold text-[#1C1410]">
                     {board.title}
@@ -288,7 +294,7 @@ const WorkspaceDetail = () => {
                 onClick={() => setCreateBoardOpen(true)}
                 className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] transition-colors hover:border-orange-200 hover:text-[#EA580C]"
               >
-                <UserPlus size={20} />
+                <UserPlusIcon size={20} />
                 <span className="text-sm font-semibold">Créer un tableau</span>
               </button>
             )}
@@ -330,15 +336,15 @@ const WorkspaceDetail = () => {
           {collaboratorTab === "members" && (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <p className="max-w-xl text-sm text-[#9C8170]">
-                Les membres de l'espace de travail peuvent consulter et rejoindre
-                tous les tableaux, et en créer de nouveaux.
+                Les membres de l'espace de travail peuvent consulter et
+                rejoindre tous les tableaux, et en créer de nouveaux.
               </p>
               {isAdmin && (
                 <Button
                   onClick={() => setInviteOpen(true)}
                   className="shrink-0 bg-[#EA580C] font-semibold hover:bg-[#C2410C]"
                 >
-                  <UserPlus size={16} />
+                  <UserPlusIcon size={16} />
                   Inviter un membre
                 </Button>
               )}
@@ -360,7 +366,8 @@ const WorkspaceDetail = () => {
             ) : (
               visibleMembers.map((m) => {
                 const isSelf = m.userId === currentUserId;
-                const canRemove = m.role != null && !m.isOwner && (isAdmin || isSelf);
+                const canRemove =
+                  m.role != null && !m.isOwner && (isAdmin || isSelf);
                 const boardIds = m.boardIds ?? [];
                 return (
                   <div
@@ -368,12 +375,19 @@ const WorkspaceDetail = () => {
                     className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDE0D4] px-4 py-3 last:border-0"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <UserAvatar name={m.username} src={m.avatarUrl} size={36} />
+                      <UserAvatar
+                        name={m.username}
+                        src={m.avatarUrl}
+                        size={36}
+                      />
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-[#1C1410]">
                           {m.username}
                           {isSelf && (
-                            <span className="font-normal text-[#9C8170]"> (vous)</span>
+                            <span className="font-normal text-[#9C8170]">
+                              {" "}
+                              (vous)
+                            </span>
                           )}
                         </p>
                         <p className="truncate text-sm text-[#9C8170]">
@@ -387,7 +401,7 @@ const WorkspaceDetail = () => {
                           trigger={
                             <span className="flex items-center gap-1.5 rounded-md border border-[#EDE0D4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]">
                               Tableaux ({boardIds.length})
-                              <CaretDown size={12} />
+                              <CaretDownIcon size={12} />
                             </span>
                           }
                         >
@@ -419,7 +433,9 @@ const WorkspaceDetail = () => {
                       ) : isAdmin ? (
                         <select
                           value={m.role}
-                          onChange={(e) => handleRoleChange(m.userId, e.target.value)}
+                          onChange={(e) =>
+                            handleRoleChange(m.userId, e.target.value)
+                          }
                           className={selectClass}
                         >
                           {ROLES.map((r) => (
@@ -440,7 +456,7 @@ const WorkspaceDetail = () => {
                           onClick={() => handleRemove(m.userId)}
                           className="h-9 px-3 text-red-600 hover:bg-red-50 hover:text-red-700"
                         >
-                          <SignOut size={15} />
+                          <SignOutIcon size={15} />
                           {isSelf ? "Quitter" : "Retirer"}
                         </Button>
                       )}

@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell } from "@phosphor-icons/react";
+import { BellIcon } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import {
   deleteAllNotifications,
@@ -67,7 +67,10 @@ const NotificationBell = () => {
   useEffect(() => {
     if (!open) return;
     const handleClick = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
         setOpen(false);
       }
     };
@@ -84,11 +87,15 @@ const NotificationBell = () => {
         `/workspace/${notification.workspaceId}/board/${notification.boardId}?card=${notification.cardId}`,
       );
     } else {
-      navigate(`/workspace/${notification.workspaceId}/board/${notification.boardId}`);
+      navigate(
+        `/workspace/${notification.workspaceId}/board/${notification.boardId}`,
+      );
     }
     if (!notification.isRead) {
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n)),
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, isRead: true } : n,
+        ),
       );
       markNotificationRead(notification.id).catch(() => {});
     }
@@ -116,7 +123,7 @@ const NotificationBell = () => {
         aria-label="Notifications"
         className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#7A6558] transition-colors hover:bg-orange-50 hover:text-[#EA580C]"
       >
-        <Bell size={20} weight="bold" />
+        <BellIcon size={20} weight="bold" />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EA580C] px-1 text-[10px] font-bold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -150,7 +157,7 @@ const NotificationBell = () => {
             </div>
           </div>
 
-          <div className="max-h-[28rem] overflow-y-auto">
+          <div className="max-h-112 overflow-y-auto">
             {notifications.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-[#9C8170]">
                 Aucune notification pour le moment.

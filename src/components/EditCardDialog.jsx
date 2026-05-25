@@ -3,13 +3,13 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  CalendarBlank,
-  TextAlignCenter,
-  Trash,
-  Archive,
-  ChatCircleText,
-  Tag,
-  CheckSquare,
+  CalendarBlankIcon,
+  TextAlignCenterIcon,
+  TrashIcon,
+  ArchiveIcon,
+  ArticleIcon ,
+  TagIcon,
+  CheckSquareIcon,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
 import { getCardActivities } from "../services/activityService";
@@ -24,17 +24,15 @@ const renderActivity = (a) => {
   if (a.type === "Moved" && a.fromColumnTitle && a.toColumnTitle) {
     return (
       <>
-        <span className="font-semibold">{a.username}</span>{" "}
-        a déplacé cette carte de{" "}
-        <span className="font-semibold">{a.fromColumnTitle}</span> à{" "}
+        <span className="font-semibold">{a.username}</span> a déplacé cette
+        carte de <span className="font-semibold">{a.fromColumnTitle}</span> à{" "}
         <span className="font-semibold">{a.toColumnTitle}</span>
       </>
     );
   }
   return (
     <>
-      <span className="font-semibold">{a.username}</span>{" "}
-      a ajouté cette carte à{" "}
+      <span className="font-semibold">{a.username}</span> a ajouté cette carte à{" "}
       <span className="font-semibold">{a.toColumnTitle}</span>
     </>
   );
@@ -173,7 +171,12 @@ const EditCardDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} title="Détails de la carte" size="xl">
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title="Détails de la carte"
+      size="xl"
+    >
       <div className="mt-4 flex min-h-0 flex-1 flex-col gap-5 md:flex-row md:items-stretch md:gap-6">
         <div className="flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto md:pr-1">
           <div>
@@ -194,7 +197,7 @@ const EditCardDialog = ({
               onClick={() => setShowLabels((v) => !v)}
               className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
             >
-              <Tag size={14} weight="bold" /> Étiquettes
+              <TagIcon size={14} weight="bold" /> Étiquettes
             </Button>
             <Button
               type="button"
@@ -203,7 +206,7 @@ const EditCardDialog = ({
               onClick={() => setShowDate((v) => !v)}
               className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
             >
-              <CalendarBlank size={14} weight="bold" /> Dates
+              <CalendarBlankIcon size={14} weight="bold" /> Dates
             </Button>
             <Button
               type="button"
@@ -212,7 +215,7 @@ const EditCardDialog = ({
               onClick={() => setShowChecklists((v) => !v)}
               className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
             >
-              <CheckSquare size={14} weight="bold" /> Checklist
+              <CheckSquareIcon size={14} weight="bold" /> Checklist
             </Button>
           </div>
 
@@ -231,28 +234,28 @@ const EditCardDialog = ({
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-              <TextAlignCenter size={18} />
+              <TextAlignCenterIcon size={18} />
               <h3>Description</h3>
             </div>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ajouter une description plus détaillée..."
-              className="min-h-[120px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
+              className="min-h-30 w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
             />
           </div>
 
           {showDate && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-                <CalendarBlank size={18} />
+                <CalendarBlankIcon size={18} />
                 <h3>Date d'échéance</h3>
               </div>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
+                className="w-full max-w-50 rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
               />
             </div>
           )}
@@ -271,18 +274,24 @@ const EditCardDialog = ({
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-              <ChatCircleText size={18} />
+              <ArticleIcon  size={18} />
               <h3>Activité</h3>
             </div>
             {activities === null ? (
               <p className="text-xs text-[#9C8170]">Chargement…</p>
             ) : activities.length === 0 ? (
-              <p className="text-xs text-[#9C8170]">Aucune activité pour le moment.</p>
+              <p className="text-xs text-[#9C8170]">
+                Aucune activité pour le moment.
+              </p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {activities.map((a) => (
                   <li key={a.id} className="flex items-start gap-3">
-                    <UserAvatar name={a.username} src={a.userAvatarUrl} size={28} />
+                    <UserAvatar
+                      name={a.username}
+                      src={a.userAvatarUrl}
+                      size={28}
+                    />
                     <div className="min-w-0 flex-1 text-sm text-[#3F2A1F]">
                       <div>{renderActivity(a)}</div>
                       <div className="text-xs text-[#9C8170]">
@@ -314,7 +323,7 @@ const EditCardDialog = ({
           disabled={isSaving}
           className="text-red-600 hover:bg-red-50 hover:text-red-700 h-9 px-3"
         >
-          <Trash size={18} className="mr-2" />
+          <TrashIcon size={18} className="mr-2" />
           Supprimer
         </Button>
         <div className="flex gap-2">
@@ -324,7 +333,7 @@ const EditCardDialog = ({
             disabled={isSaving}
             className="text-[#7A6558] h-9"
           >
-            <Archive size={18} className="mr-2" /> Archiver
+            <ArchiveIcon size={18} className="mr-2" /> Archiver
           </Button>
           <Button
             variant="ghost"

@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  ArrowCounterClockwise,
-  Archive,
-  List,
-  Cards,
-  ArrowUUpLeft,
+  ArrowCounterClockwiseIcon,
+  ArchiveIcon,
+  ListIcon,
+  CardsIcon,
 } from "@phosphor-icons/react";
 import { Dialog } from "@/components/ui/dialog";
 import { getArchivedColumns, restoreColumn } from "../services/boardService";
@@ -97,7 +96,7 @@ const GlobalArchiveDialog = ({
               : "text-[#7A6558] hover:text-[#EA580C]"
           }`}
         >
-          <List size={18} /> Listes
+          <ListIcon size={18} /> Listes
         </button>
         <button
           onClick={() => setActiveTab("cards")}
@@ -107,11 +106,11 @@ const GlobalArchiveDialog = ({
               : "text-[#7A6558] hover:text-[#EA580C]"
           }`}
         >
-          <Cards size={18} /> Cartes
+          <CardsIcon size={18} /> Cartes
         </button>
       </div>
 
-      <div className="min-h-[300px] max-h-[450px] overflow-y-auto pr-1">
+      <div className="min-h-75 max-h-112.5 overflow-y-auto pr-1">
         {activeTab === "columns" ? (
           loadingColumns ? (
             <p className="py-12 text-center text-sm text-[#9C8170]">
@@ -167,7 +166,7 @@ const GlobalArchiveDialog = ({
 
 const EmptyState = ({ message }) => (
   <div className="flex flex-col items-center gap-2 py-12 text-center text-[#9C8170]">
-    <Archive size={40} weight="light" className="text-[#EDE0D4]" />
+    <ArchiveIcon size={40} weight="light" className="text-[#EDE0D4]" />
     <p className="text-sm">{message}</p>
   </div>
 );
@@ -195,7 +194,7 @@ const ArchiveItem = ({ title, subtitle, onRestore, isBusy, isDisabled }) => (
           : "text-[#EA580C] hover:bg-orange-50"
       }`}
     >
-      <ArrowCounterClockwise size={16} weight="bold" />
+      <ArrowCounterClockwiseIcon size={16} weight="bold" />
       <span className="text-xs font-bold">{isBusy ? "..." : "Restaurer"}</span>
     </Button>
   </li>

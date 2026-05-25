@@ -17,7 +17,8 @@ export function formatRelative(dateString) {
   if (diffMin < 60) return `il y a ${diffMin} minute${diffMin > 1 ? "s" : ""}`;
 
   const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `il y a ${diffHour} heure${diffHour > 1 ? "s" : ""}`;
+  if (diffHour < 24)
+    return `il y a ${diffHour} heure${diffHour > 1 ? "s" : ""}`;
 
   return absoluteFormatter.format(date);
 }

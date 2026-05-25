@@ -5,7 +5,14 @@ import MemberPopover from "./MemberPopover";
 
 const MAX_VISIBLE = 5;
 
-const PresenceAvatarItem = ({ user, currentUserId, online, open, onToggle, onClose }) => {
+const PresenceAvatarItem = ({
+  user,
+  currentUserId,
+  online,
+  open,
+  onToggle,
+  onClose,
+}) => {
   const ref = useRef(null);
 
   useEffect(() => {
