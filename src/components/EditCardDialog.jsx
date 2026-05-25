@@ -9,13 +9,16 @@ import {
   Archive,
   ChatCircleText,
   Tag,
+  CheckSquare,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
 import { getCardActivities } from "../services/activityService";
+import { getChecklists } from "../services/checklistService";
 import { UserAvatar } from "./UserAvatar";
 import { formatRelative } from "@/lib/relativeTime";
 import CardComments from "./CardComments";
 import CardLabels from "./CardLabels";
+import CardChecklists from "./CardChecklists";
 
 const renderActivity = (a) => {
   if (a.type === "Moved" && a.fromColumnTitle && a.toColumnTitle) {
@@ -54,6 +57,7 @@ const EditCardDialog = ({
   const [activities, setActivities] = useState(null);
   const [showLabels, setShowLabels] = useState(true);
   const [showDate, setShowDate] = useState(false);
+  const [showChecklists, setShowChecklists] = useState(false);
 
   useEffect(() => {
     if (card) {
@@ -76,6 +80,19 @@ const EditCardDialog = ({
       .catch(() => {
         if (active) setActivities([]);
       });
+    return () => {
+      active = false;
+    };
+  }, [card, workspaceId, boardId]);
+
+  useEffect(() => {
+    if (!card) return;
+    let active = true;
+    getChecklists(workspaceId, boardId, card.columnId, card.id)
+      .then((data) => {
+        if (active && (data?.length ?? 0) > 0) setShowChecklists(true);
+      })
+      .catch(() => null);
     return () => {
       active = false;
     };
@@ -188,6 +205,15 @@ const EditCardDialog = ({
             >
               <CalendarBlank size={14} weight="bold" /> Dates
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowChecklists((v) => !v)}
+              className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
+            >
+              <CheckSquare size={14} weight="bold" /> Checklist
+            </Button>
           </div>
 
           {showLabels && (
@@ -229,6 +255,18 @@ const EditCardDialog = ({
                 className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
               />
             </div>
+          )}
+
+          {showChecklists && (
+            <CardChecklists
+              workspaceId={workspaceId}
+              boardId={boardId}
+              columnId={card.columnId}
+              cardId={card.id}
+              onChecklistsChanged={(counts) =>
+                onCardUpdated(card.columnId, { ...card, ...counts })
+              }
+            />
           )}
 
           <div className="flex flex-col gap-3">

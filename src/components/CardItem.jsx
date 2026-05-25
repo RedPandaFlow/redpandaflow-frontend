@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TextAlignLeft, CalendarBlank } from "@phosphor-icons/react";
+import { TextAlignLeft, CalendarBlank, CheckSquare } from "@phosphor-icons/react";
 
 export default function CardItem({ card, onClick }) {
   const {
@@ -58,13 +58,25 @@ export default function CardItem({ card, onClick }) {
 
       <p className="text-sm font-medium text-[#1C1410]">{card.title}</p>
 
-      {(card.description || card.dueDate) && (
-        <div className="flex items-center gap-3 text-xs text-[#9C8170]">
+      {(card.description || card.dueDate || card.checklistItemsTotal > 0) && (
+        <div className="mt-2 flex items-center gap-2 text-xs text-[#9C8170]">
           {card.description && <TextAlignLeft size={14} />}
           {card.dueDate && (
             <span className="flex items-center gap-1">
               <CalendarBlank size={14} />
               {new Date(card.dueDate).toLocaleDateString()}
+            </span>
+          )}
+          {card.checklistItemsTotal > 0 && (
+            <span
+              className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+                card.checklistItemsDone === card.checklistItemsTotal
+                  ? "bg-green-100 text-green-700"
+                  : "bg-[#FDF3EA] text-[#7A6558]"
+              }`}
+            >
+              <CheckSquare size={12} weight="bold" />
+              {card.checklistItemsDone}/{card.checklistItemsTotal}
             </span>
           )}
         </div>
