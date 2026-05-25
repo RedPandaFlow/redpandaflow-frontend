@@ -6,8 +6,32 @@ import {
   TextAlignCenter,
   Trash,
   Archive,
+  ClockClockwise,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
+import { getCardActivities } from "../services/activityService";
+import { UserAvatar } from "./UserAvatar";
+import { formatRelative } from "@/lib/relativeTime";
+
+const renderActivity = (a) => {
+  if (a.type === "Moved" && a.fromColumnTitle && a.toColumnTitle) {
+    return (
+      <>
+        <span className="font-semibold">{a.username}</span>{" "}
+        a déplacé cette carte de{" "}
+        <span className="font-semibold">{a.fromColumnTitle}</span> à{" "}
+        <span className="font-semibold">{a.toColumnTitle}</span>
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="font-semibold">{a.username}</span>{" "}
+      a ajouté cette carte à{" "}
+      <span className="font-semibold">{a.toColumnTitle}</span>
+    </>
+  );
+};
 
 const EditCardDialog = ({
   isOpen,
@@ -22,6 +46,7 @@ const EditCardDialog = ({
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [activities, setActivities] = useState(null);
 
   useEffect(() => {
     if (card) {
@@ -32,6 +57,21 @@ const EditCardDialog = ({
       );
     }
   }, [card]);
+
+  useEffect(() => {
+    if (!card) return;
+    let active = true;
+    getCardActivities(workspaceId, boardId, card.columnId, card.id)
+      .then((data) => {
+        if (active) setActivities(data ?? []);
+      })
+      .catch(() => {
+        if (active) setActivities([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [card, workspaceId, boardId]);
 
   if (!card) return null;
 
@@ -144,6 +184,32 @@ const EditCardDialog = ({
             onChange={(e) => setDueDate(e.target.value)}
             className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
           />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+            <ClockClockwise size={18} />
+            <h3>Activité</h3>
+          </div>
+          {activities === null ? (
+            <p className="text-xs text-[#9C8170]">Chargement…</p>
+          ) : activities.length === 0 ? (
+            <p className="text-xs text-[#9C8170]">Aucune activité pour le moment.</p>
+          ) : (
+            <ul className="flex max-h-48 flex-col gap-3 overflow-y-auto pr-1">
+              {activities.map((a) => (
+                <li key={a.id} className="flex items-start gap-3">
+                  <UserAvatar name={a.username} src={a.userAvatarUrl} size={28} />
+                  <div className="min-w-0 flex-1 text-sm text-[#3F2A1F]">
+                    <div>{renderActivity(a)}</div>
+                    <div className="text-xs text-[#9C8170]">
+                      {formatRelative(a.createdAt)}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="flex justify-between items-center mt-2 pt-4 border-t border-[#EDE0D4]">
