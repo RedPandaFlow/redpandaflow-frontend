@@ -12,3 +12,7 @@ export const markNotificationRead = async (id) => {
 export const markAllNotificationsRead = async () => {
     await api.patch("/notifications/read-all");
 };
+
+export const deleteAllNotifications = async () => {
+    await api.delete("/notifications");
+};
