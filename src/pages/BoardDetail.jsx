@@ -256,6 +256,15 @@ const BoardDetail = () => {
       });
     });
 
+    let cardsFetchSeq = 0;
+    connection.on("CardsChanged", async (payload) => {
+      if (cancelled || !payload?.boardId) return;
+      if (String(payload.boardId) !== String(boardId)) return;
+      const seq = ++cardsFetchSeq;
+      const fresh = await getBoard(workspaceId, boardId).catch(() => null);
+      if (!cancelled && fresh && seq === cardsFetchSeq) setBoard(fresh);
+    });
+
     connection.onreconnected(async () => {
       if (cancelled) return;
       setBoardConnectionId(connection.connectionId);

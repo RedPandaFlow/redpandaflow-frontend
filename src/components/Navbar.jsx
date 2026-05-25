@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { userWorkspacePath } from "../lib/routes";
 import CreateMenu from "./CreateMenu";
+import NotificationBell from "./NotificationBell";
 import SearchBar from "./SearchBar";
 import UserMenu from "./UserMenu";
 import CreateWorkspaceDialog from "./CreateWorkspaceDialog";
@@ -33,6 +34,7 @@ const Navbar = () => {
             onCreateWorkspace={() => setWorkspaceDialogOpen(true)}
             onCreateBoard={() => setBoardDialogOpen(true)}
           />
+          <NotificationBell />
           <UserMenu />
         </div>
       </nav>
