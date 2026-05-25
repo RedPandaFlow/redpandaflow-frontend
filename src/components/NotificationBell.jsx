@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import {
+  deleteAllNotifications,
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -99,6 +100,12 @@ const NotificationBell = () => {
     markAllNotificationsRead().catch(() => {});
   };
 
+  const handleDeleteAll = async () => {
+    if (notifications.length === 0) return;
+    setNotifications([]);
+    deleteAllNotifications().catch(() => {});
+  };
+
   if (!user) return null;
 
   return (
@@ -119,17 +126,28 @@ const NotificationBell = () => {
 
       {open && (
         <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-96 overflow-hidden rounded-lg border border-[#EDE0D4] bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#EDE0D4] px-4 py-3">
+          <div className="flex items-center justify-between gap-3 border-b border-[#EDE0D4] px-4 py-3">
             <h3 className="text-sm font-bold text-[#1C1410]">Notifications</h3>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAll}
-                className="text-xs font-semibold text-[#EA580C] hover:underline"
-              >
-                Tout marquer comme lu
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAll}
+                  className="text-xs font-semibold text-[#EA580C] hover:underline"
+                >
+                  Tout marquer comme lu
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleDeleteAll}
+                  className="text-xs font-semibold text-red-600 hover:underline"
+                >
+                  Tout supprimer
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="max-h-[28rem] overflow-y-auto">
