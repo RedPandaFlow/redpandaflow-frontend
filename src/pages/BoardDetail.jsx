@@ -790,6 +790,7 @@ const BoardDetail = () => {
       </div>
 
       <EditCardDialog
+        key={selectedCard?.id}
         isOpen={!!selectedCard}
         onClose={closeCardDetail}
         card={selectedCard}
