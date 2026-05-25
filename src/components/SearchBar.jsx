@@ -70,7 +70,7 @@ const SearchBar = () => {
     if (entry.type === "workspace") {
       navigate(`/workspace/${entry.item.id}`);
     } else if (entry.type === "card") {
-      navigate(`/workspace/${entry.item.workspaceId}/board/${entry.item.boardId}`);
+      navigate(`/workspace/${entry.item.workspaceId}/board/${entry.item.boardId}?card=${entry.item.id}`);
     } else {
       navigate(`/workspace/${entry.item.workspaceId}/board/${entry.item.id}`);
     }

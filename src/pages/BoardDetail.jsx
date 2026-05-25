@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Archive,
   DotsThree,
@@ -61,6 +61,8 @@ import GlobalArchiveDialog from "../components/GlobalArchiveDialog";
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const cardParam = searchParams.get("card");
   const { user } = useContext(AuthContext);
 
   const [board, setBoard] = useState(null);
@@ -74,7 +76,9 @@ const BoardDetail = () => {
   const [presence, setPresence] = useState([]);
   const [members, setMembers] = useState([]);
   const [activeDragItem, setActiveDragItem] = useState(null);
-  const [selectedCard, setSelectedCard] = useState(null);
+  const selectedCard =
+    board?.columns.flatMap((c) => c.cards).find((c) => c.id === cardParam) ??
+    null;
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const originalColumnIdRef = useRef(null);
   const newColumnRef = useRef(null);
@@ -114,6 +118,19 @@ const BoardDetail = () => {
   useEffect(() => {
     if (addingColumn) newColumnRef.current?.focus();
   }, [addingColumn]);
+
+  const openCardDetail = (card) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("card", card.id);
+    setSearchParams(next, { replace: true });
+  };
+
+  const closeCardDetail = () => {
+    if (!searchParams.has("card")) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("card");
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     const connection = createHubConnection("/hubs/board");
@@ -688,7 +705,7 @@ const BoardDetail = () => {
                   boardId={boardId}
                   onArchive={() => handleArchiveColumn(column.id)}
                   onDelete={() => handleDeleteColumn(column.id)}
-                  onCardClick={(card) => setSelectedCard(card)}
+                  onCardClick={openCardDetail}
                   onCardCreated={(columnId, newCard) => {
                     setBoard((prev) => ({
                       ...prev,
@@ -774,7 +791,7 @@ const BoardDetail = () => {
 
       <EditCardDialog
         isOpen={!!selectedCard}
-        onClose={() => setSelectedCard(null)}
+        onClose={closeCardDetail}
         card={selectedCard}
         workspaceId={workspaceId}
         boardId={boardId}
