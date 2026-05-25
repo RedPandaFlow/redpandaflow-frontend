@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MagnifyingGlass, Kanban, UsersThree, Spinner } from "@phosphor-icons/react";
+import { MagnifyingGlass, Kanban, UsersThree, Note, Spinner } from "@phosphor-icons/react";
 import { search } from "../services/searchService";
 
-const EMPTY_RESULTS = { workspaces: [], boards: [] };
+const EMPTY_RESULTS = { workspaces: [], boards: [], cards: [] };
 
 const SearchBar = () => {
   const navigate = useNavigate();
@@ -30,6 +30,7 @@ const SearchBar = () => {
           setResults({
             workspaces: data.workspaces ?? [],
             boards: data.boards ?? [],
+            cards: data.cards ?? [],
           });
           setActiveIndex(-1);
         }
@@ -62,11 +63,14 @@ const SearchBar = () => {
   const flatItems = [
     ...results.workspaces.map((w) => ({ type: "workspace", item: w })),
     ...results.boards.map((b) => ({ type: "board", item: b })),
+    ...results.cards.map((c) => ({ type: "card", item: c })),
   ];
 
   const goTo = (entry) => {
     if (entry.type === "workspace") {
       navigate(`/workspace/${entry.item.id}`);
+    } else if (entry.type === "card") {
+      navigate(`/workspace/${entry.item.workspaceId}/board/${entry.item.boardId}`);
     } else {
       navigate(`/workspace/${entry.item.workspaceId}/board/${entry.item.id}`);
     }
@@ -124,7 +128,7 @@ const SearchBar = () => {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Rechercher un espace ou un tableau"
+          placeholder="Rechercher un espace, un tableau ou une carte"
           className="w-full rounded-lg border border-[#EDE0D4] bg-white/70 py-2 pl-9 pr-3 text-sm text-[#3E2C1C] placeholder:text-[#9C8B7A] outline-none transition-colors focus:border-[#EA580C] focus:bg-white"
         />
         {loading && (
@@ -179,6 +183,27 @@ const SearchBar = () => {
                     active={flatIdx === activeIndex}
                     onMouseEnter={() => setActiveIndex(flatIdx)}
                     onClick={() => goTo({ type: "board", item: board })}
+                  />
+                );
+              })}
+            </SearchSection>
+          )}
+
+          {results.cards.length > 0 && (
+            <SearchSection title="Cartes">
+              {results.cards.map((card) => {
+                const flatIdx = flatItems.findIndex(
+                  (entry) => entry.type === "card" && entry.item.id === card.id
+                );
+                return (
+                  <SearchItem
+                    key={`card-${card.id}`}
+                    icon={Note}
+                    title={card.title}
+                    subtitle={`${card.boardTitle} · ${card.workspaceName}`}
+                    active={flatIdx === activeIndex}
+                    onMouseEnter={() => setActiveIndex(flatIdx)}
+                    onClick={() => goTo({ type: "card", item: card })}
                   />
                 );
               })}
