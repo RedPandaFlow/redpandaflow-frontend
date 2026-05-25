@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckSquare, Plus, Trash } from "@phosphor-icons/react";
+import { CheckSquareIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   addChecklistItem,
@@ -64,16 +64,23 @@ const CardChecklists = ({
       alert("Impossible de créer la checklist.");
       return;
     }
-    updateChecklists((prev) => [...prev, { ...created, items: created.items ?? [] }]);
+    updateChecklists((prev) => [
+      ...prev,
+      { ...created, items: created.items ?? [] },
+    ]);
     setNewChecklistTitle("");
     setCreatingChecklist(false);
   };
 
   const handleDeleteChecklist = async (checklistId) => {
     if (!window.confirm("Supprimer cette checklist ?")) return;
-    await deleteChecklist(workspaceId, boardId, columnId, cardId, checklistId).catch(
-      () => null,
-    );
+    await deleteChecklist(
+      workspaceId,
+      boardId,
+      columnId,
+      cardId,
+      checklistId,
+    ).catch(() => null);
     updateChecklists((prev) => prev.filter((c) => c.id !== checklistId));
   };
 
@@ -145,7 +152,7 @@ const CardChecklists = ({
     return (
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-          <CheckSquare size={18} />
+          <CheckSquareIcon size={18} />
           <h3>Checklists</h3>
         </div>
         <p className="text-xs text-[#9C8170]">Chargement…</p>
@@ -156,7 +163,7 @@ const CardChecklists = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-        <CheckSquare size={18} />
+        <CheckSquareIcon size={18} />
         <h3>Checklists</h3>
       </div>
 
@@ -166,7 +173,10 @@ const CardChecklists = ({
         const progress = total === 0 ? 0 : Math.round((done / total) * 100);
 
         return (
-          <div key={checklist.id} className="flex flex-col gap-2 rounded-lg border border-[#EDE0D4] bg-[#FFF8F2] p-3">
+          <div
+            key={checklist.id}
+            className="flex flex-col gap-2 rounded-lg border border-[#EDE0D4] bg-[#FFF8F2] p-3"
+          >
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-bold text-[#1C1410]">
                 {checklist.title}
@@ -177,7 +187,7 @@ const CardChecklists = ({
                 className="rounded p-1 text-[#9C8170] transition-colors hover:bg-red-50 hover:text-red-600"
                 aria-label="Supprimer la checklist"
               >
-                <Trash size={14} weight="bold" />
+                <TrashIcon size={14} weight="bold" />
               </button>
             </div>
 
@@ -294,7 +304,7 @@ const CardChecklists = ({
           onClick={() => setCreatingChecklist(true)}
           className="h-8 w-fit gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
         >
-          <Plus size={14} weight="bold" /> Ajouter une checklist
+          <PlusIcon size={14} weight="bold" /> Ajouter une checklist
         </Button>
       )}
     </div>

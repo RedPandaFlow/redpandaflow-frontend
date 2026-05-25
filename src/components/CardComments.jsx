@@ -1,5 +1,9 @@
 import { useState, useEffect, useContext } from "react";
-import { ChatCircle, PencilSimple, Trash } from "@phosphor-icons/react";
+import {
+  ChatCircleTextIcon,
+  PencilSimpleIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "./UserAvatar";
@@ -31,7 +35,12 @@ const CardComments = ({
 
   const loadComments = async () => {
     setIsLoading(true);
-    const data = await getCardComments(workspaceId, boardId, columnId, cardId).catch(() => null);
+    const data = await getCardComments(
+      workspaceId,
+      boardId,
+      columnId,
+      cardId,
+    ).catch(() => null);
     if (data) setComments(data);
     setIsLoading(false);
   };
@@ -94,7 +103,7 @@ const CardComments = ({
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-        <ChatCircle size={18} />
+        <ChatCircleTextIcon size={18} />
         <h3>Commentaires</h3>
       </div>
 
@@ -105,7 +114,7 @@ const CardComments = ({
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Écrire un commentaire..."
-            className="min-h-[80px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
+            className="min-h-20 w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
           />
           <div className="flex justify-end">
             <Button
@@ -156,7 +165,7 @@ const CardComments = ({
                       <textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        className="min-h-[60px] w-full resize-none rounded-lg border border-[#EDE0D4] p-2 text-sm focus:border-orange-400 focus:outline-none"
+                        className="min-h-15 w-full resize-none rounded-lg border border-[#EDE0D4] p-2 text-sm focus:border-orange-400 focus:outline-none"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -194,7 +203,7 @@ const CardComments = ({
                           }}
                           className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[#7A6558] transition-colors hover:bg-orange-50 hover:text-[#EA580C]"
                         >
-                          <PencilSimple size={12} weight="bold" />
+                          <PencilSimpleIcon size={12} weight="bold" />
                           Modifier
                         </button>
                       )}
@@ -204,7 +213,7 @@ const CardComments = ({
                           onClick={() => handleDeleteComment(comment.id)}
                           className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[#7A6558] transition-colors hover:bg-red-50 hover:text-red-600"
                         >
-                          <Trash size={12} weight="bold" />
+                          <TrashIcon size={12} weight="bold" />
                           Supprimer
                         </button>
                       )}

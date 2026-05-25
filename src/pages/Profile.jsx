@@ -193,8 +193,8 @@ const Profile = () => {
         <CardContent className="p-6 sm:p-8">
           <h3 className="text-base font-bold text-red-700">Zone de danger</h3>
           <p className="text-sm text-[#7A6558] mt-1">
-            La suppression de votre compte est définitive. Vos données personnelles
-            seront effacées et vos commentaires anonymisés.
+            La suppression de votre compte est définitive. Vos données
+            personnelles seront effacées et vos commentaires anonymisés.
           </p>
           <Button
             type="button"

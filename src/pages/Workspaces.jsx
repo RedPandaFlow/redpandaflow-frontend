@@ -1,6 +1,12 @@
 import { useContext, useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { CaretRight, Gear, Kanban, Plus, UsersThree } from "@phosphor-icons/react";
+import {
+  CaretRightIcon,
+  GearIcon,
+  KanbanIcon,
+  PlusIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { userWorkspacePath } from "../lib/routes";
 import { getWorkspaces } from "../services/workspaceService";
@@ -53,11 +59,11 @@ const Workspaces = () => {
       try {
         const data = await getWorkspaces();
         const boardsPerWorkspace = await Promise.all(
-          data.map((ws) => getBoards(ws.id).catch(() => []))
+          data.map((ws) => getBoards(ws.id).catch(() => [])),
         );
         if (active) {
           setWorkspaces(
-            data.map((ws, i) => ({ ...ws, boards: boardsPerWorkspace[i] }))
+            data.map((ws, i) => ({ ...ws, boards: boardsPerWorkspace[i] })),
           );
         }
       } catch {
@@ -128,7 +134,7 @@ const Workspaces = () => {
                           aria-expanded={isActive}
                           className="flex min-w-0 flex-1 items-center gap-3 text-left"
                         >
-                          <CaretRight
+                          <CaretRightIcon
                             size={14}
                             weight="bold"
                             className={`shrink-0 transition-transform ${
@@ -139,7 +145,7 @@ const Workspaces = () => {
                           />
                           <div
                             className={`flex size-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br text-base font-bold text-white ${gradientFor(
-                              ws.name
+                              ws.name,
                             )}`}
                           >
                             {initial}
@@ -156,21 +162,19 @@ const Workspaces = () => {
 
                         <div className="flex shrink-0 items-center gap-1.5">
                           <WorkspaceAction
-                            icon={Kanban}
+                            icon={KanbanIcon}
                             label="Tableaux"
-                            onClick={() =>
-                              navigate(`${detailPath}?tab=boards`)
-                            }
+                            onClick={() => navigate(`${detailPath}?tab=boards`)}
                           />
                           <WorkspaceAction
-                            icon={UsersThree}
+                            icon={UsersThreeIcon}
                             label="Membres"
                             onClick={() =>
                               navigate(`${detailPath}?tab=members`)
                             }
                           />
                           <WorkspaceAction
-                            icon={Gear}
+                            icon={GearIcon}
                             label="Paramètres"
                             onClick={() =>
                               navigate(`${detailPath}?tab=settings`)
@@ -196,7 +200,7 @@ const Workspaces = () => {
                               onClick={() => setCreateBoardFor(ws.id)}
                               className="flex min-h-30 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#EDE0D4] bg-white text-[#9C8170] transition-colors hover:border-orange-200 hover:text-[#EA580C]"
                             >
-                              <Plus size={20} />
+                              <PlusIcon size={20} />
                               <span className="text-sm font-semibold">
                                 Créer un tableau
                               </span>
@@ -235,7 +239,7 @@ const Workspaces = () => {
                       <div className="mb-3 flex items-center gap-3">
                         <div
                           className={`flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br text-sm font-bold text-white ${gradientFor(
-                            ws.name
+                            ws.name,
                           )}`}
                         >
                           {initial}

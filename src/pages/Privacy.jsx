@@ -42,15 +42,18 @@ const Privacy = () => {
           <h2 className="text-lg font-bold">Données collectées</h2>
           <ul className="list-disc pl-5 text-sm text-[#3F2A1F] leading-relaxed space-y-1">
             <li>Adresse email et nom d'utilisateur (compte)</li>
-            <li>Mot de passe (stocké sous forme de hash bcrypt, jamais en clair)</li>
+            <li>
+              Mot de passe (stocké sous forme de hash bcrypt, jamais en clair)
+            </li>
             <li>Biographie et URL d'avatar si renseignés</li>
             <li>
               Contenus que vous créez&nbsp;: espaces de travail, tableaux,
               cartes, commentaires, listes
             </li>
             <li>
-              Cookies de session strictement nécessaires (jetons d'authentification
-              HttpOnly) — aucun cookie de mesure d'audience ou publicitaire
+              Cookies de session strictement nécessaires (jetons
+              d'authentification HttpOnly) — aucun cookie de mesure d'audience
+              ou publicitaire
             </li>
           </ul>
         </section>
@@ -79,9 +82,9 @@ const Privacy = () => {
           <h2 className="text-lg font-bold">Durée de conservation</h2>
           <p className="text-sm text-[#3F2A1F] leading-relaxed">
             Vos données sont conservées tant que votre compte est actif. Lorsque
-            vous supprimez votre compte, vos données personnelles sont
-            effacées et vos commentaires sont anonymisés afin de préserver le
-            fil des discussions auxquelles d'autres utilisateurs ont participé.
+            vous supprimez votre compte, vos données personnelles sont effacées
+            et vos commentaires sont anonymisés afin de préserver le fil des
+            discussions auxquelles d'autres utilisateurs ont participé.
           </p>
         </section>
 

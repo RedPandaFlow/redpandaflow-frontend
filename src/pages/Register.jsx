@@ -168,7 +168,10 @@ const Register = () => {
             <Separator className="bg-[#EDE0D4]" />
             <p className="text-xs text-center text-[#9C8170]">
               En créant un compte vous acceptez nos{" "}
-              <Link to="/cgu" className="font-semibold text-[#EA580C] hover:underline">
+              <Link
+                to="/cgu"
+                className="font-semibold text-[#EA580C] hover:underline"
+              >
                 CGU
               </Link>{" "}
               et notre{" "}
