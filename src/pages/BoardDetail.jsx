@@ -82,6 +82,7 @@ const BoardDetail = () => {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const originalColumnIdRef = useRef(null);
   const newColumnRef = useRef(null);
+  const cardMutationInFlightRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -256,6 +257,18 @@ const BoardDetail = () => {
       });
     });
 
+    let cardsFetchSeq = 0;
+    connection.on("CardsChanged", async (payload) => {
+      if (cancelled || !payload?.boardId) return;
+      if (String(payload.boardId) !== String(boardId)) return;
+      if (cardMutationInFlightRef.current) return;
+      const seq = ++cardsFetchSeq;
+      const fresh = await getBoard(workspaceId, boardId).catch(() => null);
+      if (cancelled || !fresh || seq !== cardsFetchSeq) return;
+      if (cardMutationInFlightRef.current) return;
+      setBoard(fresh);
+    });
+
     connection.onreconnected(async () => {
       if (cancelled) return;
       setBoardConnectionId(connection.connectionId);
@@ -379,6 +392,7 @@ const BoardDetail = () => {
 
     if (activeData?.type === "Card") {
       originalColumnIdRef.current = activeData.card.columnId;
+      cardMutationInFlightRef.current = true;
     }
   };
 
@@ -439,6 +453,14 @@ const BoardDetail = () => {
 
   const handleDragEnd = async (event) => {
     setActiveDragItem(null);
+    try {
+      await runDragEnd(event);
+    } finally {
+      cardMutationInFlightRef.current = false;
+    }
+  };
+
+  const runDragEnd = async (event) => {
     const { active, over } = event;
     if (!over) return;
 
