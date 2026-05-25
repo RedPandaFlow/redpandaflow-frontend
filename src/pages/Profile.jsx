@@ -1,18 +1,28 @@
-import { useContext, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AuthContext } from "../context/AuthContext";
-import { deleteAccount } from "../services/authService";
+import {
+  deleteAccount,
+  deleteAvatar,
+  uploadAvatar,
+} from "../services/authService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { resolveAvatarUrl } from "@/lib/avatar";
+
+const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 const Profile = () => {
   const { user, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
 
   if (!user) {
     return (
@@ -25,6 +35,7 @@ const Profile = () => {
   const username = user?.username ?? "—";
   const email = user?.email ?? "—";
   const initial = username.charAt(0).toUpperCase();
+  const avatarUrl = resolveAvatarUrl(user.avatarUrl);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -53,6 +64,47 @@ const Profile = () => {
     }
   };
 
+  const handleFileSelected = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast.error("Format non supporté. Utilisez PNG, JPEG ou WebP.");
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("Le fichier dépasse 2 Mo.");
+      return;
+    }
+
+    setAvatarBusy(true);
+    try {
+      const data = await uploadAvatar(file);
+      setUser({ ...user, avatarUrl: data.avatarUrl });
+      toast.success("Photo de profil mise à jour.");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ?? "Impossible d'envoyer la photo.",
+      );
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarBusy(true);
+    try {
+      await deleteAvatar();
+      setUser({ ...user, avatarUrl: null });
+      toast.success("Photo de profil supprimée.");
+    } catch {
+      toast.error("Impossible de supprimer la photo.");
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
   return (
     <main className="max-w-2xl mx-auto py-12 px-4 md:px-0">
       <div className="mb-8">
@@ -70,9 +122,17 @@ const Profile = () => {
       <Card className="border border-[#EDE0D4] shadow-sm bg-white overflow-hidden">
         <CardContent className="p-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <div className="w-20 h-20 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl font-bold text-[#EA580C] shrink-0">
-              {initial}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={username}
+                className="w-20 h-20 rounded-2xl border border-orange-100 object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl font-bold text-[#EA580C] shrink-0">
+                {initial}
+              </div>
+            )}
 
             <div className="flex-1 text-center sm:text-left">
               <h2 className="text-xl font-bold text-[#1C1410]">{username}</h2>
@@ -88,6 +148,42 @@ const Profile = () => {
                   Membre Standard
                 </Badge>
               </div>
+              <div className="flex gap-2 mt-4 justify-center sm:justify-start flex-wrap">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleFileSelected}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarBusy}
+                >
+                  {avatarBusy
+                    ? "Envoi…"
+                    : avatarUrl
+                      ? "Changer la photo"
+                      : "Ajouter une photo"}
+                </Button>
+                {avatarUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="lg"
+                    onClick={handleRemoveAvatar}
+                    disabled={avatarBusy}
+                  >
+                    Retirer
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-[#9C8170] mt-2">
+                PNG, JPEG ou WebP — 2 Mo maximum.
+              </p>
             </div>
           </div>
         </CardContent>

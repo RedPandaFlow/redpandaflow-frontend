@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import { X } from "@phosphor-icons/react";
 
-export function Dialog({ open, onClose, title, description, children }) {
+const sizeClasses = {
+  md: "max-w-md",
+  xl: "max-w-4xl",
+};
+
+export function Dialog({ open, onClose, title, description, children, size = "md" }) {
   useEffect(() => {
     if (!open) return;
     const handleKey = (e) => e.key === "Escape" && onClose();
@@ -21,7 +26,7 @@ export function Dialog({ open, onClose, title, description, children }) {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#EDE0D4] bg-white shadow-2xl">
+      <div className={`relative z-10 w-full ${sizeClasses[size] ?? sizeClasses.md} rounded-2xl border border-[#EDE0D4] bg-white shadow-2xl`}>
         <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-2">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-[#1C1410]">{title}</h2>

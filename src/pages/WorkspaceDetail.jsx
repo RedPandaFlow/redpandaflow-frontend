@@ -368,7 +368,7 @@ const WorkspaceDetail = () => {
                     className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDE0D4] px-4 py-3 last:border-0"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <UserAvatar name={m.username} size={36} />
+                      <UserAvatar name={m.username} src={m.avatarUrl} size={36} />
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-[#1C1410]">
                           {m.username}

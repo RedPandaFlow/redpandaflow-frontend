@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -6,10 +7,34 @@ import {
   TextAlignCenter,
   Trash,
   Archive,
+  ChatCircleText,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
+import { getCardActivities } from "../services/activityService";
+import { UserAvatar } from "./UserAvatar";
+import { formatRelative } from "@/lib/relativeTime";
 import CardComments from "./CardComments";
 import CardLabels from "./CardLabels";
+
+const renderActivity = (a) => {
+  if (a.type === "Moved" && a.fromColumnTitle && a.toColumnTitle) {
+    return (
+      <>
+        <span className="font-semibold">{a.username}</span>{" "}
+        a déplacé cette carte de{" "}
+        <span className="font-semibold">{a.fromColumnTitle}</span> à{" "}
+        <span className="font-semibold">{a.toColumnTitle}</span>
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="font-semibold">{a.username}</span>{" "}
+      a ajouté cette carte à{" "}
+      <span className="font-semibold">{a.toColumnTitle}</span>
+    </>
+  );
+};
 
 const EditCardDialog = ({
   isOpen,
@@ -25,6 +50,7 @@ const EditCardDialog = ({
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [activities, setActivities] = useState(null);
 
   useEffect(() => {
     if (card) {
@@ -35,6 +61,21 @@ const EditCardDialog = ({
       );
     }
   }, [card]);
+
+  useEffect(() => {
+    if (!card) return;
+    let active = true;
+    getCardActivities(workspaceId, boardId, card.columnId, card.id)
+      .then((data) => {
+        if (active) setActivities(data ?? []);
+      })
+      .catch(() => {
+        if (active) setActivities([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [card, workspaceId, boardId]);
 
   if (!card) return null;
 
@@ -57,9 +98,9 @@ const EditCardDialog = ({
         payload,
       );
       onCardUpdated(card.columnId, updatedCard);
-      onClose();
+      toast.success("Carte enregistrée.");
     } catch (error) {
-      alert("Erreur lors de la mise à jour.");
+      toast.error("Erreur lors de la mise à jour.");
     } finally {
       setIsSaving(false);
     }
@@ -111,96 +152,124 @@ const EditCardDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} title="Détails de la carte">
-      <div className="flex flex-col gap-5 mt-2 overflow-y-auto max-h-[75vh] pr-2">
-        <div>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-transparent text-xl font-bold focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1 -ml-2 text-[#1C1410]"
-            placeholder="Titre de la carte..."
-          />
-        </div>
-
-        <CardLabels
-          workspaceId={workspaceId}
-          boardId={boardId}
-          columnId={card.columnId}
-          cardId={card.id}
-          currentBoardRole={currentBoardRole}
-        />
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-            <TextAlignCenter size={18} />
-            <h3>Description</h3>
+    <Dialog open={isOpen} onClose={onClose} title="Détails de la carte" size="xl">
+      <div className="mt-2 flex flex-col gap-5 md:flex-row md:gap-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <div>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-transparent text-xl font-bold focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1 -ml-2 text-[#1C1410]"
+              placeholder="Titre de la carte..."
+            />
           </div>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ajouter une description plus détaillée..."
-            className="min-h-[120px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
-          />
-        </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-            <CalendarBlank size={18} />
-            <h3>Date d'échéance</h3>
+          <CardLabels
+            workspaceId={workspaceId}
+            boardId={boardId}
+            columnId={card.columnId}
+            cardId={card.id}
+            currentBoardRole={currentBoardRole}
+          />
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+              <TextAlignCenter size={18} />
+              <h3>Description</h3>
+            </div>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ajouter une description plus détaillée..."
+              className="min-h-[120px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 shadow-sm"
+            />
           </div>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
-          />
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+              <CalendarBlank size={18} />
+              <h3>Date d'échéance</h3>
+            </div>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
+            />
+          </div>
         </div>
 
-        <CardComments
-          workspaceId={workspaceId}
-          boardId={boardId}
-          columnId={card.columnId}
-          cardId={card.id}
-          currentBoardRole={currentBoardRole}
-        />
+        <aside className="flex w-full flex-col gap-4 border-[#EDE0D4] md:w-80 md:shrink-0 md:border-l md:pl-6">
+          <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+            <ChatCircleText size={18} />
+            <h3>Commentaires et activité</h3>
+          </div>
 
-        <div className="flex justify-between items-center mt-2 pt-4 border-t border-[#EDE0D4] sticky bottom-0 bg-white">
+          <CardComments
+            workspaceId={workspaceId}
+            boardId={boardId}
+            columnId={card.columnId}
+            cardId={card.id}
+            currentBoardRole={currentBoardRole}
+          />
+
+          {activities === null ? (
+            <p className="text-xs text-[#9C8170]">Chargement…</p>
+          ) : activities.length === 0 ? (
+            <p className="text-xs text-[#9C8170]">Aucune activité pour le moment.</p>
+          ) : (
+            <ul className="flex max-h-[28rem] flex-col gap-3 overflow-y-auto pr-1">
+              {activities.map((a) => (
+                <li key={a.id} className="flex items-start gap-3">
+                  <UserAvatar name={a.username} src={a.userAvatarUrl} size={28} />
+                  <div className="min-w-0 flex-1 text-sm text-[#3F2A1F]">
+                    <div>{renderActivity(a)}</div>
+                    <div className="text-xs text-[#9C8170]">
+                      {formatRelative(a.createdAt)}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+      </div>
+
+      <div className="mt-6 flex justify-between items-center pt-4 border-t border-[#EDE0D4]">
+        <Button
+          variant="ghost"
+          onClick={handleDelete}
+          disabled={isSaving}
+          className="text-red-600 hover:bg-red-50 hover:text-red-700 h-9 px-3"
+        >
+          <Trash size={18} className="mr-2" />
+          Supprimer
+        </Button>
+        <div className="flex gap-2">
           <Button
             variant="ghost"
-            onClick={handleDelete}
+            onClick={handleArchive}
             disabled={isSaving}
-            className="text-red-600 hover:bg-red-50 hover:text-red-700 h-9 px-3"
+            className="text-[#7A6558] h-9"
           >
-            <Trash size={18} className="mr-2" />
-            Supprimer
+            <Archive size={18} className="mr-2" /> Archiver
           </Button>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              onClick={handleArchive}
-              disabled={isSaving}
-              className="text-[#7A6558] h-9"
-            >
-              <Archive size={18} className="mr-2" /> Archiver
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              disabled={isSaving}
-              className="text-[#7A6558] h-9"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || !title.trim()}
-              className="bg-[#EA580C] hover:bg-[#C2410C] text-white h-9"
-            >
-              {isSaving ? "..." : "Enregistrer"}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSaving}
+            className="text-[#7A6558] h-9"
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !title.trim()}
+            className="bg-[#EA580C] hover:bg-[#C2410C] text-white h-9"
+          >
+            {isSaving ? "..." : "Enregistrer"}
+          </Button>
         </div>
       </div>
     </Dialog>

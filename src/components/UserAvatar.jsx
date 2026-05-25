@@ -1,10 +1,13 @@
+import { resolveAvatarUrl } from "@/lib/avatar";
+
 export function UserAvatar({ name, src, size = 36 }) {
   const initial = (name || "?").charAt(0).toUpperCase();
+  const resolved = resolveAvatarUrl(src);
 
-  if (src) {
+  if (resolved) {
     return (
       <img
-        src={src}
+        src={resolved}
         alt={name}
         className="rounded-full border border-[#EDE0D4] object-cover"
         style={{ width: size, height: size }}

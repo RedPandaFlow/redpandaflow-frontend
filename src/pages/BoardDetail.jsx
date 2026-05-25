@@ -82,6 +82,7 @@ const BoardDetail = () => {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const originalColumnIdRef = useRef(null);
   const newColumnRef = useRef(null);
+  const cardMutationInFlightRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -229,9 +230,10 @@ const BoardDetail = () => {
       if (cancelled || !payload?.column) return;
       setBoard((prev) => {
         if (!prev) return prev;
-        const existing = prev.columns ?? [];
-        if (existing.some((c) => c.id === payload.column.id)) return prev;
-        return { ...prev, columns: [...existing, payload.column] };
+        const filtered = (prev.columns ?? []).filter(
+          (c) => c.id !== payload.column.id,
+        );
+        return { ...prev, columns: [...filtered, payload.column] };
       });
     });
 
@@ -254,6 +256,18 @@ const BoardDetail = () => {
         }));
         return { ...prev, columns: moved };
       });
+    });
+
+    let cardsFetchSeq = 0;
+    connection.on("CardsChanged", async (payload) => {
+      if (cancelled || !payload?.boardId) return;
+      if (String(payload.boardId) !== String(boardId)) return;
+      if (cardMutationInFlightRef.current) return;
+      const seq = ++cardsFetchSeq;
+      const fresh = await getBoard(workspaceId, boardId).catch(() => null);
+      if (cancelled || !fresh || seq !== cardsFetchSeq) return;
+      if (cardMutationInFlightRef.current) return;
+      setBoard(fresh);
     });
 
     connection.onreconnected(async () => {
@@ -381,6 +395,7 @@ const BoardDetail = () => {
 
     if (activeData?.type === "Card") {
       originalColumnIdRef.current = activeData.card.columnId;
+      cardMutationInFlightRef.current = true;
     }
   };
 
@@ -441,6 +456,14 @@ const BoardDetail = () => {
 
   const handleDragEnd = async (event) => {
     setActiveDragItem(null);
+    try {
+      await runDragEnd(event);
+    } finally {
+      cardMutationInFlightRef.current = false;
+    }
+  };
+
+  const runDragEnd = async (event) => {
     const { active, over } = event;
     if (!over) return;
 
@@ -598,11 +621,11 @@ const BoardDetail = () => {
 
   const handleColumnRestored = (restored) => {
     setBoard((prev) => {
-      const existing = prev.columns ?? [];
-      const nextOrder = existing.length;
+      const filtered = (prev.columns ?? []).filter((c) => c.id !== restored.id);
+      const nextOrder = filtered.length;
       return {
         ...prev,
-        columns: [...existing, { ...restored, order: nextOrder }],
+        columns: [...filtered, { ...restored, order: nextOrder }],
       };
     });
   };
@@ -792,6 +815,7 @@ const BoardDetail = () => {
       </div>
 
       <EditCardDialog
+        key={selectedCard?.id}
         isOpen={!!selectedCard}
         onClose={closeCardDetail}
         card={selectedCard}
