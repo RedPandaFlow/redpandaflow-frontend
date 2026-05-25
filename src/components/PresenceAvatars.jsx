@@ -36,7 +36,7 @@ const PresenceAvatarItem = ({ user, currentUserId, online, open, onToggle, onClo
           online ? "" : "grayscale opacity-60"
         }`}
       >
-        <UserAvatar name={user.username} size={32} />
+        <UserAvatar name={user.username} src={user.avatarUrl} size={32} />
       </button>
       {open && (
         <MemberPopover
@@ -60,12 +60,19 @@ const PresenceAvatars = ({ members, presence }) => {
       userId: m.userId,
       username: m.username,
       email: m.email,
+      avatarUrl: m.avatarUrl ?? presenceById.get(m.userId)?.avatarUrl ?? null,
       isOnline: presenceById.has(m.userId),
     }));
     const knownIds = new Set(memberList.map((m) => m.userId));
     for (const p of presence ?? []) {
       if (!knownIds.has(p.userId)) {
-        memberList.push({ userId: p.userId, username: p.username, email: null, isOnline: true });
+        memberList.push({
+          userId: p.userId,
+          username: p.username,
+          email: null,
+          avatarUrl: p.avatarUrl ?? null,
+          isOnline: true,
+        });
       }
     }
     memberList.sort((a, b) => {

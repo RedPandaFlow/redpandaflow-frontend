@@ -258,7 +258,7 @@ const ShareBoardDialog = ({ open, onClose, workspaceId, boardId }) => {
                     key={m.userId}
                     className="flex items-center gap-3 py-2.5"
                   >
-                    <UserAvatar name={m.username} size={36} />
+                    <UserAvatar name={m.username} src={m.avatarUrl} size={36} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-[#1C1410]">
                         {m.username}

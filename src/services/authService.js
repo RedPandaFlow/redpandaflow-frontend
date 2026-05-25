@@ -22,3 +22,16 @@ export const logout = async () => {
 export const deleteAccount = async () => {
     await api.delete('/auth/account');
 };
+
+export const uploadAvatar = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await api.post('/auth/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+};
+
+export const deleteAvatar = async () => {
+    await api.delete('/auth/avatar');
+};
