@@ -16,6 +16,7 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -47,11 +48,15 @@ import {
   DropdownSeparator,
 } from "@/components/ui/dropdown-menu";
 import ShareBoardDialog from "../components/ShareBoardDialog";
-import ArchivedColumnsDialog from "../components/ArchivedColumnsDialog";
 import PresenceAvatars from "../components/PresenceAvatars";
-import { createHubConnection, setBoardConnectionId } from "../services/signalrClient";
+import {
+  createHubConnection,
+  setBoardConnectionId,
+} from "../services/signalrClient";
 import CardItem from "../components/CardItem";
 import { createCard, updateCardOrder } from "../services/cardService";
+import EditCardDialog from "../components/EditCardDialog";
+import GlobalArchiveDialog from "../components/GlobalArchiveDialog";
 
 const BoardDetail = () => {
   const { workspaceId, boardId } = useParams();
@@ -66,9 +71,12 @@ const BoardDetail = () => {
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [archivesOpen, setArchivesOpen] = useState(false);
   const [presence, setPresence] = useState([]);
   const [members, setMembers] = useState([]);
+  const [activeDragItem, setActiveDragItem] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const originalColumnIdRef = useRef(null);
   const newColumnRef = useRef(null);
 
   const sensors = useSensors(
@@ -120,8 +128,10 @@ const BoardDetail = () => {
 
     connection.on("BoardUpdated", (payload) => {
       if (cancelled || !payload) return;
-      setBoard((prev) => (prev ? { ...prev, title: payload.title ?? prev.title } : prev));
-      setTitleDraft((prev) => (payload.title ?? prev));
+      setBoard((prev) =>
+        prev ? { ...prev, title: payload.title ?? prev.title } : prev,
+      );
+      setTitleDraft((prev) => payload.title ?? prev);
     });
 
     connection.on("BoardDeleted", () => {
@@ -146,12 +156,19 @@ const BoardDetail = () => {
       setBoard((prev) => {
         if (!prev) return prev;
         const existing = prev.columns ?? [];
-        if (incoming.isArchived) {
-          return { ...prev, columns: existing.filter((c) => c.id !== incoming.id) };
-        }
-        const found = existing.some((c) => c.id === incoming.id);
-        const next = found
-          ? existing.map((c) => (c.id === incoming.id ? { ...c, ...incoming } : c))
+        const next = existing.some((c) => c.id === incoming.id)
+          ? existing.map((c) => {
+              if (c.id === incoming.id) {
+                const cardsCascade = incoming.isArchived
+                  ? (c.cards || []).map((card) => ({
+                      ...card,
+                      isArchived: true,
+                    }))
+                  : c.cards || [];
+                return { ...c, ...incoming, cards: cardsCascade };
+              }
+              return c;
+            })
           : [...existing, incoming];
         return { ...prev, columns: next };
       });
@@ -161,18 +178,34 @@ const BoardDetail = () => {
       if (cancelled || !payload?.id) return;
       setBoard((prev) =>
         prev
-          ? { ...prev, columns: (prev.columns ?? []).filter((c) => c.id !== payload.id) }
-          : prev
+          ? {
+              ...prev,
+              columns: (prev.columns ?? []).filter((c) => c.id !== payload.id),
+            }
+          : prev,
       );
     });
 
     connection.on("ColumnArchived", (payload) => {
       if (cancelled || !payload?.id) return;
-      setBoard((prev) =>
-        prev
-          ? { ...prev, columns: (prev.columns ?? []).filter((c) => c.id !== payload.id) }
-          : prev
-      );
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: (prev.columns ?? []).map((c) =>
+            c.id === payload.id
+              ? {
+                  ...c,
+                  isArchived: true,
+                  cards: (c.cards || []).map((card) => ({
+                    ...card,
+                    isArchived: true,
+                  })),
+                }
+              : c,
+          ),
+        };
+      });
     });
 
     connection.on("ColumnRestored", (payload) => {
@@ -189,9 +222,14 @@ const BoardDetail = () => {
       if (cancelled || !payload?.columnId) return;
       setBoard((prev) => {
         if (!prev) return prev;
-        const ordered = [...(prev.columns ?? [])].sort((a, b) => a.order - b.order);
+        const ordered = [...(prev.columns ?? [])].sort(
+          (a, b) => a.order - b.order,
+        );
         const oldIndex = ordered.findIndex((c) => c.id === payload.columnId);
-        const newIndex = Math.max(0, Math.min(payload.newOrder ?? 0, ordered.length - 1));
+        const newIndex = Math.max(
+          0,
+          Math.min(payload.newOrder ?? 0, ordered.length - 1),
+        );
         if (oldIndex < 0 || oldIndex === newIndex) return prev;
         const moved = arrayMove(ordered, oldIndex, newIndex).map((c, idx) => ({
           ...c,
@@ -254,7 +292,11 @@ const BoardDetail = () => {
 
   if (!board) return null;
 
-  const columns = [...(board.columns ?? [])].sort((a, b) => a.order - b.order);
+  const allColumnsSorted = [...(board.columns ?? [])].sort(
+    (a, b) => a.order - b.order,
+  );
+
+  const columns = allColumnsSorted.filter((c) => !c.isArchived);
 
   const commitTitle = async () => {
     const next = titleDraft.trim();
@@ -314,7 +356,72 @@ const BoardDetail = () => {
     setNewColumnTitle("");
   };
 
+  const handleDragStart = (event) => {
+    const activeData = event.active.data.current;
+    setActiveDragItem(activeData);
+
+    if (activeData?.type === "Card") {
+      originalColumnIdRef.current = activeData.card.columnId;
+    }
+  };
+
+  const handleDragOver = (event) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeType = active.data.current?.type;
+    const overType = over.data.current?.type;
+
+    if (activeType !== "Card") return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    setBoard((prev) => {
+      if (!prev) return prev;
+
+      const sourceColumn = prev.columns.find((c) =>
+        c.cards?.some((card) => card.id === activeId),
+      );
+      const destColumn =
+        overType === "Column"
+          ? prev.columns.find((c) => c.id === overId)
+          : prev.columns.find((c) =>
+              c.cards?.some((card) => card.id === overId),
+            );
+
+      if (!sourceColumn || !destColumn || sourceColumn.id === destColumn.id) {
+        return prev;
+      }
+
+      const sourceCards = [...(sourceColumn.cards || [])];
+      const destCards = [...(destColumn.cards || [])];
+
+      const activeIndex = sourceCards.findIndex((c) => c.id === activeId);
+      const overIndex =
+        overType === "Column"
+          ? destCards.length
+          : destCards.findIndex((c) => c.id === overId);
+
+      const [movedCard] = sourceCards.splice(activeIndex, 1);
+      movedCard.columnId = destColumn.id;
+
+      const newOverIndex = overIndex >= 0 ? overIndex : destCards.length;
+      destCards.splice(newOverIndex, 0, movedCard);
+
+      return {
+        ...prev,
+        columns: prev.columns.map((c) => {
+          if (c.id === sourceColumn.id) return { ...c, cards: sourceCards };
+          if (c.id === destColumn.id) return { ...c, cards: destCards };
+          return c;
+        }),
+      };
+    });
+  };
+
   const handleDragEnd = async (event) => {
+    setActiveDragItem(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -389,8 +496,7 @@ const BoardDetail = () => {
             c.id === sourceColumn.id ? { ...c, cards: movedCards } : c,
           ),
         }));
-      }
-      else {
+      } else {
         const [movedCard] = sourceCards.splice(activeIndex, 1);
         movedCard.columnId = destColumn.id;
         destCards.splice(overIndex, 0, movedCard);
@@ -410,25 +516,46 @@ const BoardDetail = () => {
       }
 
       try {
-        await updateCardOrder(workspaceId, boardId, sourceColumn.id, activeId, {
-          newColumnId: destColumn.id,
-          newOrder: overIndex >= 0 ? overIndex : 0,
-        });
+        await updateCardOrder(
+          workspaceId,
+          boardId,
+          originalColumnIdRef.current,
+          activeId,
+          {
+            newColumnId: destColumn.id,
+            newOrder: overIndex >= 0 ? overIndex : 0,
+          },
+        );
       } catch (error) {
-        alert(error.response?.data?.message || "Erreur lors du déplacement de la carte.");
+        alert(
+          error.response?.data?.message ||
+            "Erreur lors du déplacement de la carte.",
+        );
         setBoard((prev) => ({ ...prev, columns: previousColumns }));
       }
     }
   };
 
   const handleArchiveColumn = async (columnId) => {
-    const previous = board.columns;
-    setBoard((prev) => ({
-      ...prev,
-      columns: (prev.columns ?? []).filter((c) => c.id !== columnId),
-    }));
     try {
       await archiveColumn(workspaceId, boardId, columnId);
+
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: prev.columns.map((c) => {
+            if (c.id === columnId) {
+              const updatedCards = (c.cards || []).map((card) => ({
+                ...card,
+                isArchived: true,
+              }));
+              return { ...c, isArchived: true, cards: updatedCards };
+            }
+            return c;
+          }),
+        };
+      });
     } catch (error) {
       alert(error.response?.data?.message || "Archivage impossible.");
       setBoard((prev) => ({ ...prev, columns: previous }));
@@ -521,7 +648,7 @@ const BoardDetail = () => {
             >
               Renommer
             </DropdownItem>
-            <DropdownItem icon={Archive} onClick={() => setArchivesOpen(true)}>
+            <DropdownItem icon={Archive} onClick={() => setIsArchiveOpen(true)}>
               Voir les archives
             </DropdownItem>
             <DropdownSeparator />
@@ -539,20 +666,15 @@ const BoardDetail = () => {
         boardId={boardId}
       />
 
-      <ArchivedColumnsDialog
-        open={archivesOpen}
-        onClose={() => setArchivesOpen(false)}
-        workspaceId={workspaceId}
-        boardId={boardId}
-        onRestored={handleColumnRestored}
-      />
-
       <div className="flex-1 overflow-x-auto overflow-y-hidden bg-[#FDFAF6]">
         <div className="flex h-full items-start gap-3 p-4 md:p-6">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
+            onDragCancel={() => setActiveDragItem(null)}
           >
             <SortableContext
               items={columns.map((c) => c.id)}
@@ -566,6 +688,7 @@ const BoardDetail = () => {
                   boardId={boardId}
                   onArchive={() => handleArchiveColumn(column.id)}
                   onDelete={() => handleDeleteColumn(column.id)}
+                  onCardClick={(card) => setSelectedCard(card)}
                   onCardCreated={(columnId, newCard) => {
                     setBoard((prev) => ({
                       ...prev,
@@ -579,6 +702,24 @@ const BoardDetail = () => {
                 />
               ))}
             </SortableContext>
+            <DragOverlay>
+              {activeDragItem?.type === "Card" ? (
+                <div className="scale-105 opacity-90 cursor-grabbing shadow-2xl">
+                  <CardItem card={activeDragItem.card} />
+                </div>
+              ) : activeDragItem?.type === "Column" ? (
+                <div className="rotate-1 scale-105 opacity-90 shadow-2xl">
+                  <BoardColumn
+                    column={activeDragItem.column}
+                    workspaceId={workspaceId}
+                    boardId={boardId}
+                    onArchive={() => {}}
+                    onDelete={() => {}}
+                    onCardCreated={() => {}}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
 
           {addingColumn ? (
@@ -630,6 +771,62 @@ const BoardDetail = () => {
           )}
         </div>
       </div>
+
+      <EditCardDialog
+        isOpen={!!selectedCard}
+        onClose={() => setSelectedCard(null)}
+        card={selectedCard}
+        workspaceId={workspaceId}
+        boardId={boardId}
+        onCardUpdated={(columnId, updatedCard) => {
+          setBoard((prev) => ({
+            ...prev,
+            columns: prev.columns.map((c) =>
+              c.id === columnId
+                ? {
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === updatedCard.id ? updatedCard : card,
+                    ),
+                  }
+                : c,
+            ),
+          }));
+        }}
+        onCardDeleted={(columnId, cardId) => {
+          setBoard((prev) => ({
+            ...prev,
+            columns: prev.columns.map((c) =>
+              c.id === columnId
+                ? { ...c, cards: c.cards.filter((card) => card.id !== cardId) }
+                : c,
+            ),
+          }));
+        }}
+      />
+      <GlobalArchiveDialog
+        open={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+        board={board}
+        workspaceId={workspaceId}
+        boardId={boardId}
+        onColumnRestored={handleColumnRestored}
+        onCardRestored={(columnId, updatedCard) => {
+          setBoard((prev) => ({
+            ...prev,
+            columns: prev.columns.map((c) =>
+              c.id === columnId
+                ? {
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === updatedCard.id ? updatedCard : card,
+                    ),
+                  }
+                : c,
+            ),
+          }));
+        }}
+      />
     </main>
   );
 };
@@ -640,6 +837,7 @@ const BoardColumn = ({
   onArchive,
   onDelete,
   onCardCreated,
+  onCardClick,
 }) => {
   const [addingCard, setAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
@@ -668,7 +866,9 @@ const BoardColumn = ({
     if (addingCard) newCardRef.current?.focus();
   }, [addingCard]);
 
-  const cards = [...(column.cards ?? [])].sort((a, b) => a.order - b.order);
+  const cards = [...(column.cards ?? [])]
+    .filter((c) => !c.isArchived)
+    .sort((a, b) => a.order - b.order);
 
   const handleAddCard = async (e) => {
     e.preventDefault();
@@ -733,7 +933,7 @@ const BoardColumn = ({
             <CardItem
               key={card.id}
               card={card}
-              onClick={(c) => console.log("Ouvrir carte", c)}
+              onClick={() => onCardClick(card)}
             />
           ))}
         </SortableContext>
