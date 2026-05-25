@@ -999,7 +999,7 @@ const BoardColumn = ({
               }}
               disabled={busy}
               placeholder="Titre de la carte..."
-              className="min-h-[60px] w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm text-[#1C1410] shadow-sm focus:border-[#EA580C] focus:outline-none focus:ring-1 focus:ring-[#EA580C]"
+              className="min-h-15 w-full resize-none rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm text-[#1C1410] shadow-sm focus:border-[#EA580C] focus:outline-none focus:ring-1 focus:ring-[#EA580C]"
             />
             <div className="flex items-center gap-2">
               <Button

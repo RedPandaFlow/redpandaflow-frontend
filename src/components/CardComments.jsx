@@ -1,7 +1,8 @@
 import { useState, useEffect, useContext } from "react";
-import { ChatCircle, Trash, PencilSimple, User, TrashIcon } from "@phosphor-icons/react";
+import { ChatCircle, PencilSimple, Trash } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "./UserAvatar";
 import {
   getCardComments,
   addComment,
@@ -102,16 +103,14 @@ const CardComments = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 mt-6">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
         <ChatCircle size={18} />
         <h3>Commentaires</h3>
       </div>
 
       <div className="flex gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#EA580C]">
-          <User size={16} weight="bold" />
-        </div>
+        <UserAvatar name={user?.username} src={user?.avatarUrl} size={32} />
         <div className="flex-1 flex flex-col gap-2">
           <textarea
             value={newComment}
@@ -131,7 +130,7 @@ const CardComments = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 mt-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
         {isLoading ? (
           <span className="text-sm text-[#9C8170]">Chargement...</span>
         ) : comments.length === 0 ? (
@@ -147,19 +146,11 @@ const CardComments = ({
 
             return (
               <div key={comment.id} className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600">
-                  {comment.userAvatarUrl ? (
-                    <img
-                      src={comment.userAvatarUrl}
-                      alt="avatar"
-                      className="h-full w-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold">
-                      {comment.username.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                <UserAvatar
+                  name={comment.username}
+                  src={comment.userAvatarUrl}
+                  size={32}
+                />
 
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-center gap-2">
@@ -204,23 +195,27 @@ const CardComments = ({
                   )}
 
                   {!editingId && (canEdit || canDelete) && (
-                    <div className="flex gap-3 mt-1 ml-1">
+                    <div className="flex gap-1 mt-1">
                       {canEdit && (
                         <button
+                          type="button"
                           onClick={() => {
                             setEditingId(comment.id);
                             setEditContent(comment.content);
                           }}
-                          className="text-xs text-[#7A6558] hover:text-[#EA580C] underline underline-offset-2"
+                          className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[#7A6558] transition-colors hover:bg-orange-50 hover:text-[#EA580C]"
                         >
-                          <TrashIcon size={14} />Modifier
+                          <PencilSimple size={12} weight="bold" />
+                          Modifier
                         </button>
                       )}
                       {canDelete && (
                         <button
+                          type="button"
                           onClick={() => handleDeleteComment(comment.id)}
-                          className="text-xs text-[#7A6558] hover:text-red-600 underline underline-offset-2"
+                          className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[#7A6558] transition-colors hover:bg-red-50 hover:text-red-600"
                         >
+                          <Trash size={12} weight="bold" />
                           Supprimer
                         </button>
                       )}

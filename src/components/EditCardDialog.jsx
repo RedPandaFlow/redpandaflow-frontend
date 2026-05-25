@@ -8,6 +8,7 @@ import {
   Trash,
   Archive,
   ChatCircleText,
+  Tag,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
 import { getCardActivities } from "../services/activityService";
@@ -51,6 +52,8 @@ const EditCardDialog = ({
   const [dueDate, setDueDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [activities, setActivities] = useState(null);
+  const [showLabels, setShowLabels] = useState(false);
+  const [showDate, setShowDate] = useState(false);
 
   useEffect(() => {
     if (card) {
@@ -59,6 +62,7 @@ const EditCardDialog = ({
       setDueDate(
         card.dueDate ? new Date(card.dueDate).toISOString().split("T")[0] : "",
       );
+      setShowDate(!!card.dueDate);
     }
   }, [card]);
 
@@ -153,8 +157,8 @@ const EditCardDialog = ({
 
   return (
     <Dialog open={isOpen} onClose={onClose} title="Détails de la carte" size="xl">
-      <div className="mt-2 flex flex-col gap-5 md:flex-row md:gap-6">
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
+      <div className="mt-4 flex min-h-0 flex-1 flex-col gap-5 md:flex-row md:items-stretch md:gap-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto md:pr-1">
           <div>
             <input
               type="text"
@@ -165,13 +169,36 @@ const EditCardDialog = ({
             />
           </div>
 
-          <CardLabels
-            workspaceId={workspaceId}
-            boardId={boardId}
-            columnId={card.columnId}
-            cardId={card.id}
-            currentBoardRole={currentBoardRole}
-          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLabels((v) => !v)}
+              className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
+            >
+              <Tag size={14} weight="bold" /> Étiquettes
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDate((v) => !v)}
+              className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
+            >
+              <CalendarBlank size={14} weight="bold" /> Dates
+            </Button>
+          </div>
+
+          {showLabels && (
+            <CardLabels
+              workspaceId={workspaceId}
+              boardId={boardId}
+              columnId={card.columnId}
+              cardId={card.id}
+              currentBoardRole={currentBoardRole}
+            />
+          )}
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
@@ -186,26 +213,49 @@ const EditCardDialog = ({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-              <CalendarBlank size={18} />
-              <h3>Date d'échéance</h3>
+          {showDate && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+                <CalendarBlank size={18} />
+                <h3>Date d'échéance</h3>
+              </div>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
+              />
             </div>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full max-w-[200px] rounded-lg border border-[#EDE0D4] bg-white p-2 text-sm focus:border-orange-400 focus:outline-none shadow-sm"
-            />
+          )}
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
+              <ChatCircleText size={18} />
+              <h3>Activité</h3>
+            </div>
+            {activities === null ? (
+              <p className="text-xs text-[#9C8170]">Chargement…</p>
+            ) : activities.length === 0 ? (
+              <p className="text-xs text-[#9C8170]">Aucune activité pour le moment.</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {activities.map((a) => (
+                  <li key={a.id} className="flex items-start gap-3">
+                    <UserAvatar name={a.username} src={a.userAvatarUrl} size={28} />
+                    <div className="min-w-0 flex-1 text-sm text-[#3F2A1F]">
+                      <div>{renderActivity(a)}</div>
+                      <div className="text-xs text-[#9C8170]">
+                        {formatRelative(a.createdAt)}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
-        <aside className="flex w-full flex-col gap-4 border-[#EDE0D4] md:w-80 md:shrink-0 md:border-l md:pl-6">
-          <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-            <ChatCircleText size={18} />
-            <h3>Commentaires et activité</h3>
-          </div>
-
+        <aside className="flex w-full min-h-0 flex-col border-[#EDE0D4] md:w-80 md:shrink-0 md:border-l md:pl-6">
           <CardComments
             workspaceId={workspaceId}
             boardId={boardId}
@@ -213,30 +263,10 @@ const EditCardDialog = ({
             cardId={card.id}
             currentBoardRole={currentBoardRole}
           />
-
-          {activities === null ? (
-            <p className="text-xs text-[#9C8170]">Chargement…</p>
-          ) : activities.length === 0 ? (
-            <p className="text-xs text-[#9C8170]">Aucune activité pour le moment.</p>
-          ) : (
-            <ul className="flex max-h-[28rem] flex-col gap-3 overflow-y-auto pr-1">
-              {activities.map((a) => (
-                <li key={a.id} className="flex items-start gap-3">
-                  <UserAvatar name={a.username} src={a.userAvatarUrl} size={28} />
-                  <div className="min-w-0 flex-1 text-sm text-[#3F2A1F]">
-                    <div>{renderActivity(a)}</div>
-                    <div className="text-xs text-[#9C8170]">
-                      {formatRelative(a.createdAt)}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
         </aside>
       </div>
 
-      <div className="mt-6 flex justify-between items-center pt-4 border-t border-[#EDE0D4]">
+      <div className="mt-6 mb-2 flex shrink-0 justify-between items-center pt-4 border-t border-[#EDE0D4]">
         <Button
           variant="ghost"
           onClick={handleDelete}
