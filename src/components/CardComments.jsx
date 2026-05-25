@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { ChatCircle, Trash, PencilSimple, User } from "@phosphor-icons/react";
+import { ChatCircle, Trash, PencilSimple, User, TrashIcon } from "@phosphor-icons/react";
 import { AuthContext } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -213,7 +213,7 @@ const CardComments = ({
                           }}
                           className="text-xs text-[#7A6558] hover:text-[#EA580C] underline underline-offset-2"
                         >
-                          Modifier
+                          <TrashIcon size={14} />Modifier
                         </button>
                       )}
                       {canDelete && (

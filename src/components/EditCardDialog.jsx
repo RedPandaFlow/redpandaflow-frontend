@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
 import CardComments from "./CardComments";
+import CardLabels from "./CardLabels";
 
 const EditCardDialog = ({
   isOpen,
@@ -122,6 +123,14 @@ const EditCardDialog = ({
           />
         </div>
 
+        <CardLabels
+          workspaceId={workspaceId}
+          boardId={boardId}
+          columnId={card.columnId}
+          cardId={card.id}
+          currentBoardRole={currentBoardRole}
+        />
+
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
             <TextAlignCenter size={18} />
@@ -148,12 +157,12 @@ const EditCardDialog = ({
           />
         </div>
 
-        <CardComments 
+        <CardComments
           workspaceId={workspaceId}
           boardId={boardId}
           columnId={card.columnId}
           cardId={card.id}
-          currentBoardRole={currentBoardRole} 
+          currentBoardRole={currentBoardRole}
         />
 
         <div className="flex justify-between items-center mt-2 pt-4 border-t border-[#EDE0D4] sticky bottom-0 bg-white">
