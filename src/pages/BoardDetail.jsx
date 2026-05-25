@@ -230,9 +230,10 @@ const BoardDetail = () => {
       if (cancelled || !payload?.column) return;
       setBoard((prev) => {
         if (!prev) return prev;
-        const existing = prev.columns ?? [];
-        if (existing.some((c) => c.id === payload.column.id)) return prev;
-        return { ...prev, columns: [...existing, payload.column] };
+        const filtered = (prev.columns ?? []).filter(
+          (c) => c.id !== payload.column.id,
+        );
+        return { ...prev, columns: [...filtered, payload.column] };
       });
     });
 
@@ -618,11 +619,11 @@ const BoardDetail = () => {
 
   const handleColumnRestored = (restored) => {
     setBoard((prev) => {
-      const existing = prev.columns ?? [];
-      const nextOrder = existing.length;
+      const filtered = (prev.columns ?? []).filter((c) => c.id !== restored.id);
+      const nextOrder = filtered.length;
       return {
         ...prev,
-        columns: [...existing, { ...restored, order: nextOrder }],
+        columns: [...filtered, { ...restored, order: nextOrder }],
       };
     });
   };
