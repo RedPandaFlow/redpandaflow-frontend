@@ -83,7 +83,8 @@ const BoardDetail = () => {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const originalColumnIdRef = useRef(null);
   const newColumnRef = useRef(null);
-  const cardMutationInFlightRef = useRef(false);
+  const cardMutationInFlightRef = useRef(0);
+  const cardOrderQueueRef = useRef(Promise.resolve());
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -389,7 +390,7 @@ const BoardDetail = () => {
 
     if (activeData?.type === "Card") {
       originalColumnIdRef.current = activeData.card.columnId;
-      cardMutationInFlightRef.current = true;
+      cardMutationInFlightRef.current += 1;
     }
   };
 
@@ -450,10 +451,16 @@ const BoardDetail = () => {
 
   const handleDragEnd = async (event) => {
     setActiveDragItem(null);
+    const isCardDrag = event.active?.data?.current?.type === "Card";
     try {
       await runDragEnd(event);
     } finally {
-      cardMutationInFlightRef.current = false;
+      if (isCardDrag) {
+        cardMutationInFlightRef.current = Math.max(
+          0,
+          cardMutationInFlightRef.current - 1,
+        );
+      }
     }
   };
 
@@ -551,17 +558,19 @@ const BoardDetail = () => {
         }));
       }
 
+      const sourceColumnIdAtDrag = originalColumnIdRef.current;
+      const newColumnId = destColumn.id;
+      const newOrder = overIndex >= 0 ? overIndex : 0;
+      const queued = cardOrderQueueRef.current.then(() =>
+        updateCardOrder(workspaceId, boardId, sourceColumnIdAtDrag, activeId, {
+          newColumnId,
+          newOrder,
+        }),
+      );
+      cardOrderQueueRef.current = queued.catch(() => undefined);
+
       try {
-        await updateCardOrder(
-          workspaceId,
-          boardId,
-          originalColumnIdRef.current,
-          activeId,
-          {
-            newColumnId: destColumn.id,
-            newOrder: overIndex >= 0 ? overIndex : 0,
-          },
-        );
+        await queued;
       } catch (error) {
         alert(
           error.response?.data?.message ||
