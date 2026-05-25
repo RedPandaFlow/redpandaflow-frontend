@@ -9,6 +9,8 @@ import Profile from './pages/Profile';
 import Workspaces from './pages/Workspaces';
 import WorkspaceDetail from './pages/WorkspaceDetail';
 import BoardDetail from './pages/BoardDetail';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -28,6 +30,9 @@ function App() {
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to={homePath} />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to={homePath} />} />
+
+        <Route path="/confidentialite" element={<Privacy />} />
+        <Route path="/cgu" element={<Terms />} />
 
         <Route element={user ? <Layout /> : <Navigate to="/login" />}>
           <Route path="/:username/workspaces" element={<Workspaces />} />

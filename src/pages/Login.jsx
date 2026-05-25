@@ -136,6 +136,15 @@ const Login = () => {
                   Créer un compte
                 </Link>
               </p>
+              <p className="text-xs text-center text-[#9C8170]">
+                <Link to="/cgu" className="hover:underline">
+                  CGU
+                </Link>
+                <span className="mx-2">·</span>
+                <Link to="/confidentialite" className="hover:underline">
+                  Politique de confidentialité
+                </Link>
+              </p>
             </CardFooter>
           </Card>
         </div>
