@@ -197,6 +197,9 @@ const EditCardDialog = ({
               columnId={card.columnId}
               cardId={card.id}
               currentBoardRole={currentBoardRole}
+              onLabelsChanged={(labels) =>
+                onCardUpdated(card.columnId, { ...card, labels })
+              }
             />
           )}
 

@@ -32,8 +32,6 @@ export default function CardItem({ card, onClick }) {
       />
     );
   }
-  console.log("Carte reçue :", card.title, "Labels :", card.labels);
-
   return (
     <div
       ref={setNodeRef}

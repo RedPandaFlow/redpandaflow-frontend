@@ -31,19 +31,9 @@ const CardComments = ({
 
   const loadComments = async () => {
     setIsLoading(true);
-    try {
-      const data = await getCardComments(
-        workspaceId,
-        boardId,
-        columnId,
-        cardId,
-      );
-      setComments(data);
-    } catch (error) {
-      console.error("Erreur lors du chargement des commentaires", error);
-    } finally {
-      setIsLoading(false);
-    }
+    const data = await getCardComments(workspaceId, boardId, columnId, cardId).catch(() => null);
+    if (data) setComments(data);
+    setIsLoading(false);
   };
 
   const handleAddComment = async () => {
@@ -60,7 +50,6 @@ const CardComments = ({
       setComments([added, ...comments]);
       setNewComment("");
     } catch (error) {
-      console.error("Erreur API complète :", error);
       alert(
         "Erreur du serveur : " +
           (error.response?.data?.message || error.message),
