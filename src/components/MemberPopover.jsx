@@ -23,7 +23,7 @@ const MemberPopover = ({ user, isSelf, onClose }) => {
 
         <div className="flex items-center gap-3">
           <div className="shrink-0 rounded-full border-4 border-white bg-white">
-            <UserAvatar name={user.username} size={56} />
+            <UserAvatar name={user.username} src={user.avatarUrl} size={56} />
           </div>
           <div className="min-w-0 flex-1 pr-6">
             <p className="truncate font-bold text-white">{user.username}</p>
