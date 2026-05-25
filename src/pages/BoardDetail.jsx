@@ -328,6 +328,8 @@ const BoardDetail = () => {
   );
 
   const columns = allColumnsSorted.filter((c) => !c.isArchived);
+  const currentMember = members.find((m) => m.userId === user?.id);
+  const currentBoardRole = currentMember ? currentMember.role : null;
 
   const commitTitle = async () => {
     const next = titleDraft.trim();
@@ -819,6 +821,7 @@ const BoardDetail = () => {
         card={selectedCard}
         workspaceId={workspaceId}
         boardId={boardId}
+        currentBoardRole={currentBoardRole}
         onCardUpdated={(columnId, updatedCard) => {
           setBoard((prev) => ({
             ...prev,

@@ -13,6 +13,8 @@ import { updateCard, deleteCard } from "../services/cardService";
 import { getCardActivities } from "../services/activityService";
 import { UserAvatar } from "./UserAvatar";
 import { formatRelative } from "@/lib/relativeTime";
+import CardComments from "./CardComments";
+import CardLabels from "./CardLabels";
 
 const renderActivity = (a) => {
   if (a.type === "Moved" && a.fromColumnTitle && a.toColumnTitle) {
@@ -40,6 +42,7 @@ const EditCardDialog = ({
   card,
   workspaceId,
   boardId,
+  currentBoardRole,
   onCardUpdated,
   onCardDeleted,
 }) => {
@@ -162,6 +165,14 @@ const EditCardDialog = ({
             />
           </div>
 
+          <CardLabels
+            workspaceId={workspaceId}
+            boardId={boardId}
+            columnId={card.columnId}
+            cardId={card.id}
+            currentBoardRole={currentBoardRole}
+          />
+
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
               <TextAlignCenter size={18} />
@@ -189,11 +200,20 @@ const EditCardDialog = ({
           </div>
         </div>
 
-        <aside className="flex w-full flex-col gap-3 border-[#EDE0D4] md:w-80 md:shrink-0 md:border-l md:pl-6">
+        <aside className="flex w-full flex-col gap-4 border-[#EDE0D4] md:w-80 md:shrink-0 md:border-l md:pl-6">
           <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
             <ChatCircleText size={18} />
             <h3>Commentaires et activité</h3>
           </div>
+
+          <CardComments
+            workspaceId={workspaceId}
+            boardId={boardId}
+            columnId={card.columnId}
+            cardId={card.id}
+            currentBoardRole={currentBoardRole}
+          />
+
           {activities === null ? (
             <p className="text-xs text-[#9C8170]">Chargement…</p>
           ) : activities.length === 0 ? (
@@ -217,41 +237,40 @@ const EditCardDialog = ({
       </div>
 
       <div className="mt-6 flex justify-between items-center pt-4 border-t border-[#EDE0D4]">
+        <Button
+          variant="ghost"
+          onClick={handleDelete}
+          disabled={isSaving}
+          className="text-red-600 hover:bg-red-50 hover:text-red-700 h-9 px-3"
+        >
+          <Trash size={18} className="mr-2" />
+          Supprimer
+        </Button>
+        <div className="flex gap-2">
           <Button
             variant="ghost"
-            onClick={handleDelete}
+            onClick={handleArchive}
             disabled={isSaving}
-            className="text-red-600 hover:bg-red-50 hover:text-red-700 h-9 px-3"
+            className="text-[#7A6558] h-9"
           >
-            <Trash size={18} className="mr-2" />
-            Supprimer
+            <Archive size={18} className="mr-2" /> Archiver
           </Button>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              onClick={handleArchive}
-              disabled={isSaving}
-              className="text-[#7A6558] h-9"
-            >
-              <Archive size={18} className="mr-2" /> Archiver
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              disabled={isSaving}
-              className="text-[#7A6558] h-9"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || !title.trim()}
-              className="bg-[#EA580C] hover:bg-[#C2410C] text-white h-9"
-            >
-              {isSaving ? "..." : "Enregistrer"}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSaving}
+            className="text-[#7A6558] h-9"
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !title.trim()}
+            className="bg-[#EA580C] hover:bg-[#C2410C] text-white h-9"
+          >
+            {isSaving ? "..." : "Enregistrer"}
+          </Button>
+        </div>
       </div>
     </Dialog>
   );
