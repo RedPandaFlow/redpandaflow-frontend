@@ -841,6 +841,7 @@ const BoardDetail = () => {
         workspaceId={workspaceId}
         boardId={boardId}
         currentBoardRole={currentBoardRole}
+        boardMembers={members}
         onCardUpdated={(columnId, updatedCard) => {
           setBoard((prev) => ({
             ...prev,

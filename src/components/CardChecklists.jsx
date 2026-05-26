@@ -221,7 +221,7 @@ const CardChecklists = ({
                     className="rounded p-1 text-[#9C8170] opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
                     aria-label="Supprimer l'élément"
                   >
-                    <Trash size={12} weight="bold" />
+                    <TrashIcon size={12} weight="bold" />
                   </button>
                 </li>
               ))}
