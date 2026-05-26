@@ -206,7 +206,7 @@ const EditCardDialog = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowMembers(true)}
+              onClick={() => setShowMembers((v) => !v)}
               className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
             >
               <UserPlusIcon size={14} weight="bold" /> Membres

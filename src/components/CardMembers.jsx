@@ -5,6 +5,7 @@ import {
   assignUserToCard,
   unassignUserFromCard,
 } from "../services/cardUserService";
+import { UserAvatar } from "./UserAvatar";
 
 const CardMembers = ({
   workspaceId,
@@ -103,19 +104,15 @@ const CardMembers = ({
           cardMembers.map((member) => (
             <div
               key={member.id}
-              className="h-8 w-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold overflow-hidden cursor-pointer shadow-sm ring-2 ring-white"
+              className="cursor-pointer rounded-full ring-2 ring-white"
               title={member.username}
               onClick={() => setIsOpen(true)}
             >
-              {member.avatarUrl ? (
-                <img
-                  src={member.avatarUrl}
-                  alt="avatar"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                (member.username || "U").charAt(0).toUpperCase()
-              )}
+              <UserAvatar
+                name={member.username}
+                src={member.avatarUrl}
+                size={32}
+              />
             </div>
           ))
         )}
@@ -150,17 +147,11 @@ const CardMembers = ({
                   className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer transition"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="h-6 w-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px] font-bold overflow-hidden">
-                      {targetAvatarUrl ? (
-                        <img
-                          src={targetAvatarUrl}
-                          alt="avatar"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        targetUsername.charAt(0).toUpperCase()
-                      )}
-                    </div>
+                    <UserAvatar
+                      name={targetUsername}
+                      src={targetAvatarUrl}
+                      size={24}
+                    />
                     <span className="text-sm font-medium text-gray-700">
                       {targetUsername}
                     </span>

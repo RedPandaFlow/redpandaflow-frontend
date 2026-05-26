@@ -6,6 +6,7 @@ import {
   CheckSquareIcon,
   ChatCircleIcon,
 } from "@phosphor-icons/react";
+import { UserAvatar } from "./UserAvatar";
 
 export default function CardItem({ card, onClick }) {
   const {
@@ -108,18 +109,14 @@ export default function CardItem({ card, onClick }) {
             {assignedUsers.map((user) => (
               <div
                 key={user.id}
-                className="h-6 w-6 rounded-full ring-2 ring-white bg-gray-200 text-gray-600 flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0"
+                className="shrink-0 rounded-full ring-2 ring-white"
                 title={user.username}
               >
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.username}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  (user.username || "U").charAt(0).toUpperCase()
-                )}
+                <UserAvatar
+                  name={user.username}
+                  src={user.avatarUrl}
+                  size={24}
+                />
               </div>
             ))}
           </div>
