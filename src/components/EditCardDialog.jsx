@@ -7,9 +7,10 @@ import {
   TextAlignCenterIcon,
   TrashIcon,
   ArchiveIcon,
-  ArticleIcon ,
+  ArticleIcon,
   TagIcon,
   CheckSquareIcon,
+  UserPlusIcon,
 } from "@phosphor-icons/react";
 import { updateCard, deleteCard } from "../services/cardService";
 import { getCardActivities } from "../services/activityService";
@@ -19,6 +20,7 @@ import { formatRelative } from "@/lib/relativeTime";
 import CardComments from "./CardComments";
 import CardLabels from "./CardLabels";
 import CardChecklists from "./CardChecklists";
+import CardMembers from "./CardMembers";
 
 const renderActivity = (a) => {
   if (a.type === "Moved" && a.fromColumnTitle && a.toColumnTitle) {
@@ -45,6 +47,7 @@ const EditCardDialog = ({
   workspaceId,
   boardId,
   currentBoardRole,
+  boardMembers,
   onCardUpdated,
   onCardDeleted,
 }) => {
@@ -56,6 +59,7 @@ const EditCardDialog = ({
   const [showLabels, setShowLabels] = useState(true);
   const [showDate, setShowDate] = useState(false);
   const [showChecklists, setShowChecklists] = useState(false);
+  const [showMembers, setShowMembers] = useState(card?.users?.length > 0);
 
   useEffect(() => {
     if (card) {
@@ -200,6 +204,14 @@ const EditCardDialog = ({
               <TagIcon size={14} weight="bold" /> Étiquettes
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMembers(true)}
+              className="h-8 gap-1.5 border-[#EDE0D4] bg-[#FFF8F2] text-xs text-[#7A6558] hover:bg-orange-50 hover:text-[#EA580C]"
+            >
+              <UserPlusIcon size={14} weight="bold" /> Membres
+            </Button>
+            <Button
               type="button"
               variant="outline"
               size="sm"
@@ -228,6 +240,19 @@ const EditCardDialog = ({
               currentBoardRole={currentBoardRole}
               onLabelsChanged={(labels) =>
                 onCardUpdated(card.columnId, { ...card, labels })
+              }
+            />
+          )}
+
+          {showMembers && (
+            <CardMembers
+              workspaceId={workspaceId}
+              boardId={boardId}
+              columnId={card.columnId}
+              cardId={card.id}
+              boardMembers={boardMembers}
+              onMembersChanged={(users) =>
+                onCardUpdated(card.columnId, { ...card, users })
               }
             />
           )}
@@ -274,7 +299,7 @@ const EditCardDialog = ({
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 font-semibold text-[#7A6558]">
-              <ArticleIcon  size={18} />
+              <ArticleIcon size={18} />
               <h3>Activité</h3>
             </div>
             {activities === null ? (
