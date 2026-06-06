@@ -20,16 +20,6 @@ const CardMembers = ({
   const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef(null);
 
-  useEffect(() => {
-    loadData();
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target))
-        setIsOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [cardId]);
-
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -47,6 +37,16 @@ const CardMembers = ({
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target))
+        setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [cardId]);
 
   const toggleMember = async (boardMember) => {
     const targetUserId = boardMember.userId || boardMember.id;

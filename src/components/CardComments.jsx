@@ -29,10 +29,6 @@ const CardComments = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadComments();
-  }, [cardId]);
-
   const loadComments = async () => {
     setIsLoading(true);
     const data = await getCardComments(
@@ -44,6 +40,10 @@ const CardComments = ({
     if (data) setComments(data);
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    loadComments();
+  }, [cardId]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -83,7 +83,7 @@ const CardComments = ({
       setComments(comments.map((c) => (c.id === commentId ? updated : c)));
       setEditingId(null);
       setEditContent("");
-    } catch (error) {
+    } catch {
       alert("Impossible de modifier le commentaire.");
     } finally {
       setIsSubmitting(false);
@@ -95,7 +95,7 @@ const CardComments = ({
     try {
       await deleteComment(workspaceId, boardId, columnId, cardId, commentId);
       setComments(comments.filter((c) => c.id !== commentId));
-    } catch (error) {
+    } catch {
       alert("Impossible de supprimer le commentaire.");
     }
   };
