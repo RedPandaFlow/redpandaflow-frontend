@@ -1,23 +1,42 @@
 # RedPandaFlow Frontend
 
-React 19 SPA for RedPandaFlow, a collaborative kanban application.
+SPA React 19 de RedPandaFlow, une application de kanban collaboratif.
+
+## Présentation
+
+Le frontend est une application monopage (SPA) pour RedPandaFlow : elle permet
+de se connecter et de gérer espaces de travail, tableaux, colonnes et cartes,
+avec une synchronisation en temps réel (présence, mutations de tableau,
+notifications) via SignalR. Elle communique avec l'API backend en REST et en
+WebSocket.
+
+L'architecture globale (services et communication) est documentée dans le
+[dépôt documentation](https://github.com/RedPandaFlow/documentation/blob/main/architecture.md).
+
+## Équipe
+
+Travail collaboratif sur l'ensemble du projet (backend, frontend, infra,
+CI/CD, documentation) :
+
+- Nathan FERRE
+- Ylan Dessenne
 
 ## Stack
 
-- React 19 with Vite 8
-- Tailwind CSS 4 and shadcn/ui (base-lyra style)
+- React 19 avec Vite 8
+- Tailwind CSS 4 et shadcn/ui (style base-lyra)
 - React Router
-- Axios with cookie-based auth (HttpOnly)
-- @microsoft/signalr for real-time updates
-- @dnd-kit for drag and drop
-- Zod and react-hook-form for form validation
-- Phosphor Icons and Sonner for toasts
+- Axios avec authentification par cookie (HttpOnly)
+- @microsoft/signalr pour les mises à jour temps réel
+- @dnd-kit pour le glisser-déposer
+- Zod et react-hook-form pour la validation des formulaires
+- Phosphor Icons et Sonner pour les notifications visuelles
 
-## Prerequisites
+## Prérequis
 
-- Node.js 20 or newer
-- npm 10 or newer
-- The backend ([redpandaflow-backend](https://github.com/RedPandaFlow/redpandaflow-backend)) reachable at `http://localhost:5090`
+- Node.js 20 ou plus récent
+- npm 10 ou plus récent
+- Le backend ([redpandaflow-backend](https://github.com/RedPandaFlow/redpandaflow-backend)) accessible sur `http://localhost:5090`
 
 ## Installation
 
@@ -27,35 +46,35 @@ cd redpandaflow-frontend
 npm install
 ```
 
-Create a `.env` file at the workspace root:
+Créer un fichier `.env` à la racine du workspace :
 
 ```bash
 VITE_API_URL=http://localhost:5090/api
 ```
 
-## Run in development
+## Lancement en développement
 
-The recommended way is via the docker-compose stack in
+La méthode recommandée est la stack docker-compose du dépôt
 [redpandaflow-infra](https://github.com/RedPandaFlow/redpandaflow-infra),
-which brings up the backend and database alongside.
+qui démarre le backend et la base de données en parallèle.
 
-For a standalone run, with the backend already running:
+Pour un lancement autonome, avec le backend déjà démarré :
 
 ```bash
 npm run dev
 ```
 
-The dev server is served at `http://localhost:5173`.
+Le serveur de développement est servi sur `http://localhost:5173`.
 
 ## Scripts
 
-- `npm run dev` — Vite dev server
-- `npm run build` — production build to `dist/`
+- `npm run dev` — serveur de développement Vite
+- `npm run build` — build de production vers `dist/`
 - `npm run lint` — ESLint
-- `npm run preview` — preview the built bundle
+- `npm run preview` — prévisualisation du build
 
-## Related repos
+## Dépôts liés
 
-- [redpandaflow-backend](https://github.com/RedPandaFlow/redpandaflow-backend) — ASP.NET Core API
-- [redpandaflow-infra](https://github.com/RedPandaFlow/redpandaflow-infra) — docker-compose stack
-- [documentation](https://github.com/RedPandaFlow/documentation) — project documentation
+- [redpandaflow-backend](https://github.com/RedPandaFlow/redpandaflow-backend) — API ASP.NET Core
+- [redpandaflow-infra](https://github.com/RedPandaFlow/redpandaflow-infra) — stack docker-compose
+- [documentation](https://github.com/RedPandaFlow/documentation) — documentation du projet

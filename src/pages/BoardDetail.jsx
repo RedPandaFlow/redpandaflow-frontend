@@ -606,7 +606,6 @@ const BoardDetail = () => {
       });
     } catch (error) {
       alert(error.response?.data?.message || "Archivage impossible.");
-      setBoard((prev) => ({ ...prev, columns: previous }));
     }
   };
 

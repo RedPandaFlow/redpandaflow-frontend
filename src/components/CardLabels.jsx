@@ -47,19 +47,6 @@ const CardLabels = ({
   const dropdownRef = useRef(null);
   const isAdmin = currentBoardRole === "Admin";
 
-  useEffect(() => {
-    loadData();
-
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-        setIsCreating(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [cardId]);
-
   const loadData = async () => {
     setIsLoading(true);
     const result = await Promise.all([
@@ -74,6 +61,19 @@ const CardLabels = ({
     }
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    loadData();
+
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setIsCreating(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [cardId]);
 
   const toggleLabel = async (labelId) => {
     const isAssigned = cardLabels.some((l) => l.id === labelId);
@@ -123,7 +123,7 @@ const CardLabels = ({
       setBoardLabels([...boardLabels, newLabel]);
       setIsCreating(false);
       setNewLabelName("");
-    } catch (error) {
+    } catch {
       alert("Erreur lors de la création de l'étiquette.");
     }
   };

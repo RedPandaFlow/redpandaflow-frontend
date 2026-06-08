@@ -32,7 +32,7 @@ const GlobalArchiveDialog = ({
       try {
         const data = await getArchivedColumns(workspaceId, boardId);
         if (!cancelled) setArchivedColumns(data);
-      } catch (error) {
+      } catch {
         if (!cancelled) alert("Chargement des colonnes impossible.");
       } finally {
         if (!cancelled) setLoadingColumns(false);
@@ -49,7 +49,7 @@ const GlobalArchiveDialog = ({
       const restored = await restoreColumn(workspaceId, boardId, columnId);
       setArchivedColumns((prev) => prev.filter((c) => c.id !== columnId));
       onColumnRestored?.(restored);
-    } catch (error) {
+    } catch {
       alert("Restauration de la colonne impossible.");
     } finally {
       setBusyId(null);
@@ -78,7 +78,7 @@ const GlobalArchiveDialog = ({
         payload,
       );
       onCardRestored(card.columnId, updatedCard);
-    } catch (error) {
+    } catch {
       alert("Erreur lors de la restauration de la carte.");
     } finally {
       setBusyId(null);

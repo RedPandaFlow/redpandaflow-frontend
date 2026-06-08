@@ -122,7 +122,7 @@ const EditCardDialog = ({
       );
       onCardUpdated(card.columnId, updatedCard);
       toast.success("Carte enregistrée.");
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la mise à jour.");
     } finally {
       setIsSaving(false);
@@ -148,7 +148,7 @@ const EditCardDialog = ({
       );
       onCardUpdated(card.columnId, updatedCard);
       onClose();
-    } catch (error) {
+    } catch {
       alert("Erreur lors de l'archivage.");
     } finally {
       setIsSaving(false);
@@ -167,7 +167,7 @@ const EditCardDialog = ({
       await deleteCard(workspaceId, boardId, card.columnId, card.id);
       onCardDeleted(card.columnId, card.id);
       onClose();
-    } catch (error) {
+    } catch {
       alert("Erreur lors de la suppression.");
     } finally {
       setIsSaving(false);
